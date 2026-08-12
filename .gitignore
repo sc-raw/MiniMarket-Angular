@@ -1,0 +1,5 @@
+MiniMarket/target/
+minimarket-frontend/node_modules/
+minimarket-frontend/dist/
+minimarket-frontend/.angular/
+Thumbs.db

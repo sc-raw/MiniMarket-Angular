@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Página no encontrada')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-5">
+    <div class="card shadow text-center">
+        <div class="card-body p-5">
+            <h1 class="display-1 text-primary">404</h1>
+            <h3>Página no encontrada</h3>
+            <a th:href="@{/}" class="btn btn-success">Volver al Inicio</a>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>

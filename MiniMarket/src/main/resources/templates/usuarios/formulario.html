@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Usuario')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <h3 class="mb-0"><i class="bi bi-person-gear"></i>
+                <span th:if="${usuario.id == null}">Nuevo Usuario</span>
+                <span th:unless="${usuario.id == null}">Editar Usuario</span>
+            </h3>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/usuarios/guardar}" th:object="${usuario}" method="post" onsubmit="return confirmarGuardar(this)">
+                <input type="hidden" th:field="*{id}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Usuario</label>
+                        <input type="text" class="form-control" th:field="*{username}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Contraseña</label>
+                        <input type="password" class="form-control" th:field="*{password}" th:required="${usuario.id == null}">
+                        <small class="text-muted" th:if="${usuario.id != null}">Deja vacío para conservar la actual.</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Rol</label>
+                        <select class="form-select" th:field="*{rol}" required>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="CAJERO">Cajero</option>
+                            <option value="REPONEDOR">Reponedor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Estado</label>
+                        <select class="form-select" th:field="*{estado}">
+                            <option th:value="true">Activo</option>
+                            <option th:value="false">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-success">Guardar</button>
+                    <a th:href="@{/usuarios}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

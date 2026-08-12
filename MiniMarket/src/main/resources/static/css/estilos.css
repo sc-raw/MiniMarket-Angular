@@ -1,0 +1,4 @@
+body { background-color: #f5f7fa; }
+.card-header-gradiente {
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+}

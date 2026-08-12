@@ -1,0 +1,21 @@
+:root {
+  --primary-color: #2E7D32;
+  --secondary-color: #43A047;
+}
+body {
+  background-color: #f5f7fa;
+  font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+}
+.navbar-dark { background-color: var(--primary-color) !important; }
+.btn-success {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.btn-success:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+.table thead.table-dark th {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
