@@ -28,6 +28,12 @@ import { AuthService } from '../../core/auth/auth.service';
               <li class="nav-item">
                 <a class="nav-link" routerLink="/productos" routerLinkActive="active">📦 Productos</a>
               </li>
+
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/categorias" routerLinkActive="active">🏷️ Categorías</a>
+              </li>
+
+
               <li class="nav-item">
                 <a class="nav-link" routerLink="/cajeros" routerLinkActive="active">🧑‍💼 Cajeros</a>
               </li>

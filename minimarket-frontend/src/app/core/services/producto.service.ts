@@ -12,6 +12,10 @@ export class ProductoService {
     return this.http.get<Producto[]>(this.baseUrl);
   }
 
+  listarTodos(): Observable<Producto[]> {
+    return this.http.get<Producto[]>(`${this.baseUrl}/todos`);
+  }
+
   guardar(producto: Producto): Observable<Producto> {
     if (producto.idProducto) {
       return this.http.put<Producto>(`${this.baseUrl}/${producto.idProducto}`, producto);

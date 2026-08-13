@@ -16,4 +16,6 @@ public interface EmpleadoService {
     List<Empleado> buscarPorApellidoConteniendo(String texto);
 
     List<Cajero> listarCajerosActivos();
+    
+    List<Cajero> listarTodosCajeros();
 }

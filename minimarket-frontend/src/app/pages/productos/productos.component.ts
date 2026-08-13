@@ -35,19 +35,62 @@ import { Producto, Categoria } from '../../core/models/models';
       }
 
       @if (cargando()) {
-        <div class="text-center py-5"><div class="spinner-border text-success" role="status"></div></div>
+        <div class="text-center py-5">
+          <div class="spinner-border text-success" role="status"></div>
+        </div>
       } @else {
         <div class="card shadow">
           <div class="card-body">
+
+            <!-- Buscador + filtros -->
+            <div class="row mb-3 g-2 align-items-center">
+              <div class="col-md-6">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Buscar por nombre o código..."
+                       [ngModel]="textoBusqueda()"
+                       (ngModelChange)="textoBusqueda.set($event); buscar()"
+                       name="busqueda">
+              </div>
+              <div class="col-md-6 text-md-end">
+                <div class="btn-group">
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'TODOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'TODOS'"
+                          (click)="setFiltro('TODOS')">
+                    Todos
+                  </button>
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'ACTIVOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'ACTIVOS'"
+                          (click)="setFiltro('ACTIVOS')">
+                    Activos
+                  </button>
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'INACTIVOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'INACTIVOS'"
+                          (click)="setFiltro('INACTIVOS')">
+                    Inactivos
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <table class="table table-hover table-bordered align-middle">
               <thead class="table-dark">
                 <tr>
-                  <th>ID</th><th>Código</th><th>Nombre</th><th>Categoría</th>
-                  <th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th>
+                  <th>ID</th>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (p of productos(); track p.idProducto) {
+                @for (p of productosFiltrados(); track p.idProducto) {
                   <tr>
                     <td>{{ p.idProducto }}</td>
                     <td class="fw-bold">{{ p.codigo }}</td>
@@ -55,21 +98,34 @@ import { Producto, Categoria } from '../../core/models/models';
                     <td><span class="badge bg-info">{{ p.categoria?.nombre }}</span></td>
                     <td class="text-end">S/. {{ p.precio }}</td>
                     <td class="text-center">
-                      <span class="badge" [class.bg-danger]="(p.stock ?? 0) < 5" [class.bg-success]="(p.stock ?? 0) >= 5">
+                      <span class="badge"
+                            [class.bg-danger]="(p.stock ?? 0) < 5"
+                            [class.bg-success]="(p.stock ?? 0) >= 5">
                         {{ p.stock }}
                       </span>
                     </td>
                     <td>
-                      @if (p.estado) { <span class="badge bg-success">Activo</span> }
-                      @else { <span class="badge bg-danger">Inactivo</span> }
+                      @if (p.estado) {
+                        <span class="badge bg-success">Activo</span>
+                      } @else {
+                        <span class="badge bg-danger">Inactivo</span>
+                      }
                     </td>
                     <td>
-                      <button class="btn btn-warning btn-sm me-1" (click)="editar(p)"><i class="bi bi-pencil"></i></button>
-                      <button class="btn btn-danger btn-sm" (click)="eliminar(p)"><i class="bi bi-trash"></i></button>
+                      <button class="btn btn-warning btn-sm me-1" (click)="editar(p)">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-danger btn-sm" (click)="eliminar(p)">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="8" class="text-center text-muted py-4">No hay productos.</td></tr>
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                      No hay productos con esos filtros.
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -82,7 +138,9 @@ import { Producto, Categoria } from '../../core/models/models';
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header text-white" style="background:#2E7D32;">
-                <h5 class="modal-title">{{ productoEditando.idProducto ? 'Editar Producto' : 'Nuevo Producto' }}</h5>
+                <h5 class="modal-title">
+                  {{ productoEditando.idProducto ? 'Editar Producto' : 'Nuevo Producto' }}
+                </h5>
                 <button type="button" class="btn-close btn-close-white" (click)="cerrarFormulario()"></button>
               </div>
               <div class="modal-body">
@@ -132,7 +190,9 @@ import { Producto, Categoria } from '../../core/models/models';
                     </div>
                   </div>
                   <div class="text-end">
-                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
+                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
+                      Cancelar
+                    </button>
                     <button type="submit" class="btn btn-success" [disabled]="guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
@@ -155,12 +215,16 @@ export class ProductosComponent implements OnInit {
   private categoriaService = inject(CategoriaService);
 
   productos = signal<Producto[]>([]);
+  productosFiltrados = signal<Producto[]>([]);
   categorias = signal<Categoria[]>([]);
   cargando = signal(true);
   guardando = signal(false);
   mostrarFormulario = signal(false);
   mensaje = signal('');
   error = signal('');
+
+  filtroEstado = signal<'TODOS' | 'ACTIVOS' | 'INACTIVOS'>('TODOS');
+  textoBusqueda = signal('');
 
   productoEditando: Producto = this.productoVacio();
 
@@ -171,16 +235,59 @@ export class ProductosComponent implements OnInit {
 
   private cargar(): void {
     this.cargando.set(true);
-    this.productoService.listar().subscribe({
-      next: (data) => { this.productos.set(data); this.cargando.set(false); },
-      error: (err) => { console.error(err); this.cargando.set(false); }
+    this.productoService.listarTodos().subscribe({
+      next: (data) => {
+        this.productos.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error.set('Error al cargar productos.');
+        this.cargando.set(false);
+      }
     });
+  }
+
+  aplicarFiltros(): void {
+    const texto = this.textoBusqueda().toLowerCase().trim();
+    const estado = this.filtroEstado();
+    let lista = this.productos();
+
+    if (estado === 'ACTIVOS') {
+      lista = lista.filter(p => p.estado === true);
+    } else if (estado === 'INACTIVOS') {
+      lista = lista.filter(p => p.estado === false);
+    }
+
+    if (texto) {
+      lista = lista.filter(p =>
+        (p.nombre ?? '').toLowerCase().includes(texto) ||
+        (p.codigo ?? '').toLowerCase().includes(texto)
+      );
+    }
+
+    this.productosFiltrados.set(lista);
+  }
+
+  setFiltro(estado: 'TODOS' | 'ACTIVOS' | 'INACTIVOS'): void {
+    this.filtroEstado.set(estado);
+    this.aplicarFiltros();
+  }
+
+  buscar(): void {
+    this.aplicarFiltros();
   }
 
   private productoVacio(): Producto {
     return {
-      codigo: '', nombre: '', descripcion: '', precio: 0,
-      stock: 0, estado: true, categoria: null
+      codigo: '',
+      nombre: '',
+      descripcion: '',
+      precio: 0,
+      stock: 0,
+      estado: true,
+      categoria: null
     };
   }
 
@@ -190,9 +297,17 @@ export class ProductosComponent implements OnInit {
   }
 
   editar(p: Producto): void {
-    this.productoEditando = { ...p };
-    this.mostrarFormulario.set(true);
+  this.productoEditando = { ...p };
+
+  if (p.categoria?.idCategoria != null) {
+    const encontrada = this.categorias().find(
+      c => c.idCategoria === p.categoria!.idCategoria
+    );
+    this.productoEditando.categoria = encontrada ?? p.categoria;
   }
+
+  this.mostrarFormulario.set(true);
+}
 
   cerrarFormulario(): void {
     this.mostrarFormulario.set(false);

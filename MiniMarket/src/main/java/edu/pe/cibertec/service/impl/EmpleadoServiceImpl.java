@@ -50,4 +50,9 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     public List<Cajero> listarCajerosActivos() {
         return repository.findCajerosActivos();
     }
+    
+    @Override
+    public List<Cajero> listarTodosCajeros() {
+        return repository.findAllCajeros();
+    }
 }

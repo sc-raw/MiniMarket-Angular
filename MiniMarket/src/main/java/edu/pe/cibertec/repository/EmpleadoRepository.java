@@ -18,4 +18,7 @@ public interface EmpleadoRepository extends JpaRepository<Empleado, Long> {
 
     @Query("SELECT c FROM Cajero c WHERE c.estado = true")
     List<Cajero> findCajerosActivos();
+    
+    @Query("SELECT c FROM Cajero c")
+    List<Cajero> findAllCajeros();
 }

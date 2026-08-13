@@ -34,19 +34,62 @@ import { Cliente } from '../../core/models/models';
       }
 
       @if (cargando()) {
-        <div class="text-center py-5"><div class="spinner-border text-success" role="status"></div></div>
+        <div class="text-center py-5">
+          <div class="spinner-border text-success" role="status"></div>
+        </div>
       } @else {
         <div class="card shadow">
           <div class="card-body">
+
+            <!-- Buscador + filtros -->
+            <div class="row mb-3 g-2 align-items-center">
+              <div class="col-md-6">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Buscar por DNI, nombres o apellidos..."
+                       [ngModel]="textoBusqueda()"
+                       (ngModelChange)="textoBusqueda.set($event); buscar()"
+                       name="busqueda">
+              </div>
+              <div class="col-md-6 text-md-end">
+                <div class="btn-group">
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'TODOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'TODOS'"
+                          (click)="setFiltro('TODOS')">
+                    Todos
+                  </button>
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'ACTIVOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'ACTIVOS'"
+                          (click)="setFiltro('ACTIVOS')">
+                    Activos
+                  </button>
+                  <button type="button" class="btn"
+                          [class.btn-success]="filtroEstado() === 'INACTIVOS'"
+                          [class.btn-outline-success]="filtroEstado() !== 'INACTIVOS'"
+                          (click)="setFiltro('INACTIVOS')">
+                    Inactivos
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <table class="table table-hover table-bordered align-middle">
               <thead class="table-dark">
                 <tr>
-                  <th>ID</th><th>DNI</th><th>Nombres</th><th>Apellidos</th>
-                  <th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acciones</th>
+                  <th>ID</th>
+                  <th>DNI</th>
+                  <th>Nombres</th>
+                  <th>Apellidos</th>
+                  <th>Teléfono</th>
+                  <th>Correo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (c of clientes(); track c.id) {
+                @for (c of clientesFiltrados(); track c.id) {
                   <tr>
                     <td>{{ c.id }}</td>
                     <td>{{ c.dni }}</td>
@@ -55,8 +98,11 @@ import { Cliente } from '../../core/models/models';
                     <td>{{ c.telefono }}</td>
                     <td>{{ c.correo }}</td>
                     <td>
-                      @if (c.estado) { <span class="badge bg-success">Activo</span> }
-                      @else { <span class="badge bg-danger">Inactivo</span> }
+                      @if (c.estado) {
+                        <span class="badge bg-success">Activo</span>
+                      } @else {
+                        <span class="badge bg-danger">Inactivo</span>
+                      }
                     </td>
                     <td>
                       <button class="btn btn-warning btn-sm me-1" (click)="editar(c)">
@@ -68,7 +114,11 @@ import { Cliente } from '../../core/models/models';
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="8" class="text-center text-muted py-4">No hay clientes.</td></tr>
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                      No hay clientes con esos filtros.
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -126,7 +176,9 @@ import { Cliente } from '../../core/models/models';
                     </select>
                   </div>
                   <div class="text-end">
-                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
+                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
+                      Cancelar
+                    </button>
                     <button type="submit" class="btn btn-success" [disabled]="guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
@@ -148,11 +200,15 @@ export class ClientesComponent implements OnInit {
   private clienteService = inject(ClienteService);
 
   clientes = signal<Cliente[]>([]);
+  clientesFiltrados = signal<Cliente[]>([]);
   cargando = signal(true);
   guardando = signal(false);
   mostrarFormulario = signal(false);
   mensaje = signal('');
   error = signal('');
+
+  filtroEstado = signal<'TODOS' | 'ACTIVOS' | 'INACTIVOS'>('TODOS');
+  textoBusqueda = signal('');
 
   clienteEditando: Cliente = this.clienteVacio();
 
@@ -163,13 +219,60 @@ export class ClientesComponent implements OnInit {
   private cargar(): void {
     this.cargando.set(true);
     this.clienteService.listar().subscribe({
-      next: (data) => { this.clientes.set(data); this.cargando.set(false); },
-      error: (err) => { console.error(err); this.cargando.set(false); }
+      next: (data) => {
+        this.clientes.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error.set('Error al cargar clientes.');
+        this.cargando.set(false);
+      }
     });
   }
 
+  aplicarFiltros(): void {
+    const texto = this.textoBusqueda().toLowerCase().trim();
+    const estado = this.filtroEstado();
+    let lista = this.clientes();
+
+    if (estado === 'ACTIVOS') {
+      lista = lista.filter(c => c.estado === true);
+    } else if (estado === 'INACTIVOS') {
+      lista = lista.filter(c => c.estado === false);
+    }
+
+    if (texto) {
+      lista = lista.filter(c =>
+        (c.dni ?? '').toLowerCase().includes(texto) ||
+        (c.nombres ?? '').toLowerCase().includes(texto) ||
+        (c.apellidos ?? '').toLowerCase().includes(texto)
+      );
+    }
+
+    this.clientesFiltrados.set(lista);
+  }
+
+  setFiltro(estado: 'TODOS' | 'ACTIVOS' | 'INACTIVOS'): void {
+    this.filtroEstado.set(estado);
+    this.aplicarFiltros();
+  }
+
+  buscar(): void {
+    this.aplicarFiltros();
+  }
+
   private clienteVacio(): Cliente {
-    return { dni: '', nombres: '', apellidos: '', telefono: '', correo: '', direccion: '', estado: true };
+    return {
+      dni: '',
+      nombres: '',
+      apellidos: '',
+      telefono: '',
+      correo: '',
+      direccion: '',
+      estado: true
+    };
   }
 
   abrirFormulario(): void {
