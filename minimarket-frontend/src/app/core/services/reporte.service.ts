@@ -7,6 +7,8 @@ export interface ResumenReporte {
   cantidadVentas: number;
   cantidadProductos: number;
   cantidadStockBajo: number;
+  cantidadVencidos: number;
+  cantidadPorVencer: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,5 +34,13 @@ export class ReporteService {
 
   stockBajo(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/stock-bajo`);
+  }
+
+  productosVencidos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/productos-vencidos`);
+  }
+
+  productosPorVencer(dias: number = 7): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/productos-por-vencer?dias=${dias}`);
   }
 }

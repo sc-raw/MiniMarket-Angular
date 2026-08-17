@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import edu.pe.cibertec.entity.Producto;
-import edu.pe.cibertec.service.CategoriaService;
 import edu.pe.cibertec.service.ProductoService;
 
 @RestController
@@ -17,9 +16,6 @@ public class ProductosRestController {
 
     @Autowired
     private ProductoService productoService;
-
-    @Autowired
-    private CategoriaService categoriaService;
 
     @GetMapping
     public List<Producto> listar() {
@@ -52,5 +48,18 @@ public class ProductosRestController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // PATCH /api/productos/{id}/stock?stock=N
+    // Actualiza SOLO el stock del producto (para reponedores)
+    @PatchMapping("/{id}/stock")
+    public ResponseEntity<?> actualizarStock(@PathVariable Integer id,
+                                             @RequestParam Integer stock) {
+        try {
+            Producto actualizado = productoService.actualizarStock(id, stock);
+            return ResponseEntity.ok(actualizado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

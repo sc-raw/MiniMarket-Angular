@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import edu.pe.cibertec.entity.Cajero;
 import edu.pe.cibertec.entity.Empleado;
+import edu.pe.cibertec.entity.Reponedor;
 import edu.pe.cibertec.repository.EmpleadoRepository;
 import edu.pe.cibertec.service.EmpleadoService;
 
@@ -50,9 +51,19 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     public List<Cajero> listarCajerosActivos() {
         return repository.findCajerosActivos();
     }
-    
+
     @Override
     public List<Cajero> listarTodosCajeros() {
         return repository.findAllCajeros();
+    }
+
+    @Override
+    public List<Reponedor> listarReponedoresActivos() {
+        return repository.findReponedoresActivos();
+    }
+
+    @Override
+    public List<Reponedor> listarTodosReponedores() {
+        return repository.findAllReponedores();
     }
 }

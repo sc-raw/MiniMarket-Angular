@@ -1,6 +1,7 @@
 package edu.pe.cibertec.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,6 +44,10 @@ public class Producto {
 
     @Column(nullable = false)
     private Boolean estado = true;
+
+    // Fecha de vencimiento del producto (opcional: solo para perecederos)
+    @Column
+    private LocalDate fechaVencimiento;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "idCategoria", nullable = false)

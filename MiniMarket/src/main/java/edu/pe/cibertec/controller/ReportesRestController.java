@@ -1,6 +1,7 @@
 package edu.pe.cibertec.controller;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,39 +37,55 @@ public class ReportesRestController {
         long cantidadVentas = ventaRepository.count();
         long cantidadProductos = productoRepository.count();
         List<?> stockBajo = productoRepository.findByStockLessThanEqual(5);
+        LocalDate hoy = LocalDate.now();
+        List<?> vencidos = productoRepository.findProductosVencidos(hoy);
+        List<?> porVencer = productoRepository.findProductosPorVencer(hoy, hoy.plusDays(7));
 
         resumen.put("totalVentasFinalizadas", total);
         resumen.put("cantidadVentas", cantidadVentas);
         resumen.put("cantidadProductos", cantidadProductos);
         resumen.put("cantidadStockBajo", stockBajo.size());
+        resumen.put("cantidadVencidos", vencidos.size());
+        resumen.put("cantidadPorVencer", porVencer.size());
         return resumen;
     }
 
     // GET /api/reportes/ventas-por-estado
-    // Devuelve: [{estado: "PENDIENTE", cantidad: 5}, ...]
     @GetMapping("/ventas-por-estado")
     public List<Object[]> ventasPorEstado() {
         return ventaRepository.contarPorEstado();
     }
 
     // GET /api/reportes/top-clientes
-    // Devuelve top 5 clientes con más compras
     @GetMapping("/top-clientes")
     public List<Object[]> topClientes() {
         return ventaRepository.topClientes();
     }
 
     // GET /api/reportes/top-productos
-    // Devuelve top 5 productos más vendidos
     @GetMapping("/top-productos")
     public List<Object[]> topProductos() {
         return productoRepository.topProductosVendidos();
     }
 
     // GET /api/reportes/stock-bajo
-    // Devuelve productos con stock <= 5
     @GetMapping("/stock-bajo")
     public List<?> stockBajo() {
         return productoRepository.findByStockLessThanEqual(5);
+    }
+
+    // GET /api/reportes/productos-vencidos
+    // Productos con fecha de vencimiento anterior a hoy
+    @GetMapping("/productos-vencidos")
+    public List<?> productosVencidos() {
+        return productoRepository.findProductosVencidos(LocalDate.now());
+    }
+
+    // GET /api/reportes/productos-por-vencer
+    // Productos que vencen entre hoy y dentro de 7 días (configurable con ?dias=N)
+    @GetMapping("/productos-por-vencer")
+    public List<?> productosPorVencer(@RequestParam(defaultValue = "7") int dias) {
+        LocalDate hoy = LocalDate.now();
+        return productoRepository.findProductosPorVencer(hoy, hoy.plusDays(dias));
     }
 }

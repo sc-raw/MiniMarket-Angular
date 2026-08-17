@@ -5,6 +5,7 @@ import { VentaService } from '../../core/services/venta.service';
 import { ClienteService } from '../../core/services/cliente.service';
 import { CajeroService } from '../../core/services/cajero.service';
 import { ProductoService } from '../../core/services/producto.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { Venta, Cliente, Cajero, Producto, CrearVentaRequest, DetalleVentaRequest } from '../../core/models/models';
 
 interface LineaDetalle {
@@ -24,9 +25,11 @@ interface LineaDetalle {
           <h2>Ventas</h2>
           <p class="text-muted">Gestión de ventas registradas.</p>
         </div>
-        <button class="btn btn-success" (click)="abrirFormulario()">
-          <i class="bi bi-plus-circle"></i> Nueva Venta
-        </button>
+        @if (auth.puedeCrearVentas()) {
+          <button class="btn btn-success" (click)="abrirFormulario()">
+            <i class="bi bi-plus-circle"></i> Nueva Venta
+          </button>
+        }
       </div>
 
       @if (error()) {
@@ -183,6 +186,7 @@ interface LineaDetalle {
 })
 export class VentasComponent implements OnInit {
   private ventaService = inject(VentaService);
+  protected auth = inject(AuthService);
   private clienteService = inject(ClienteService);
   private cajeroService = inject(CajeroService);
   private productoService = inject(ProductoService);

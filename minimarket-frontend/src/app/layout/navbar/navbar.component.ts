@@ -22,24 +22,36 @@ import { AuthService } from '../../core/auth/auth.service';
               <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">🏠 Inicio</a>
             </li>
             @if (auth.estaAutenticado()) {
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/clientes" routerLinkActive="active">👤 Clientes</a>
-              </li>
+              @if (auth.esAtencionCliente()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/pedidos-whatsapp" routerLinkActive="active">
+                    💬 Pedidos WhatsApp
+                  </a>
+                </li>
+              }
+              @if (!auth.esAtencionCliente() && auth.puedeVerClientes()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/clientes" routerLinkActive="active">👤 Clientes</a>
+                </li>
+              }
               <li class="nav-item">
                 <a class="nav-link" routerLink="/productos" routerLinkActive="active">📦 Productos</a>
               </li>
-
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/categorias" routerLinkActive="active">🏷️ Categorías</a>
-              </li>
-
-
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/cajeros" routerLinkActive="active">🧑‍💼 Cajeros</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/ventas" routerLinkActive="active">🛒 Ventas</a>
-              </li>
+              @if (auth.puedeGestionarCategorias()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/categorias" routerLinkActive="active">🏷️ Categorías</a>
+                </li>
+              }
+              @if (auth.puedeGestionarEmpleados()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/empleados" routerLinkActive="active">🧑‍💼 Empleados</a>
+                </li>
+              }
+              @if (auth.puedeVerVentas() && !auth.esAtencionCliente()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/ventas" routerLinkActive="active">🛒 Ventas</a>
+                </li>
+              }
               <li class="nav-item">
                 <a class="nav-link" routerLink="/reportes" routerLinkActive="active">📊 Reportes</a>
               </li>

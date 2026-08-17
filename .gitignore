@@ -2,5 +2,4 @@ MiniMarket/target/
 minimarket-frontend/node_modules/
 minimarket-frontend/dist/
 minimarket-frontend/.angular/
-MiniMarket/src/main/resources/application.properties
 Thumbs.db

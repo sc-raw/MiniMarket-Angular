@@ -50,17 +50,26 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authenticationProvider(authenticationProvider())
+        .csrf(csrf -> csrf.disable()) // Mantenemos CSRF desactivado para la API REST
         .authorizeHttpRequests(auth -> auth
+            // 1. Rutas públicas (login, recursos estáticos, errores)
             .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**",
                              "/error", "/acceso-denegado").permitAll()
+            
+            // 2. Webhook de WhatsApp y API REST totalmente públicos
+            // Se usa el comodín doble (**) para cubrir /api/whatsapp, /api/whatsapp/webhook, etc.
+            .requestMatchers("/api/whatsapp/**").permitAll()
+            .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/**").permitAll()
+
+            // 3. Vistas Thymeleaf y rutas protegidas por Rol
             .requestMatchers("/").authenticated()
-            .requestMatchers("/clientes/**").hasAnyRole("ADMIN", "CAJERO")
-            .requestMatchers("/productos/**").hasAnyRole("ADMIN", "CAJERO", "REPONEDOR")
+            .requestMatchers("/clientes/**").hasAnyRole("ADMIN", "CAJERO", "ATENCION_CLIENTE")
+            .requestMatchers("/productos/**").hasAnyRole("ADMIN", "CAJERO", "REPONEDOR", "ATENCION_CLIENTE")
             .requestMatchers("/categorias/**").hasRole("ADMIN")
             .requestMatchers("/empleados/**").hasRole("ADMIN")
             .requestMatchers("/usuarios/**").hasRole("ADMIN")
-            .requestMatchers("/ventas/**").hasAnyRole("ADMIN", "CAJERO", "REPONEDOR")
+            .requestMatchers("/ventas/**").hasAnyRole("ADMIN", "CAJERO", "ATENCION_CLIENTE")
             .anyRequest().authenticated())
         .formLogin(login -> login
                 .loginPage("/login")
@@ -73,8 +82,7 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/login?logout")
                 .permitAll())
         .exceptionHandling(ex -> ex
-                .accessDeniedHandler(accessDeniedHandler()))
-        .csrf(csrf -> csrf.disable());
+                .accessDeniedHandler(accessDeniedHandler()));
 
         return http.build();
     }

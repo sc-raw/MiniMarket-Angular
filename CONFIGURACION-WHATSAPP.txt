@@ -1,0 +1,136 @@
+==============================================================
+  MiniMarket - Guía de Configuración WhatsApp Business API
+==============================================================
+token de ngrok=3BH85Rg01YmjfTB2RGE1W8aIxiR_2tNpTDvU4VxoD7D3QE2x4
+Este documento explica cómo configurar la integración con
+WhatsApp Business API de Meta para que los pedidos de los
+clientes lleguen automáticamente al sistema.
+
+==============================================================
+  PASO 1: Crear App en Meta for Developers
+==============================================================
+
+1. Ir a: https://developers.facebook.com/
+2. Iniciar sesión con tu cuenta de Facebook
+3. Click en "Create App"
+4. Seleccionar tipo: "Business"
+5. Nombre: MiniMarket
+6. Una vez creada, en el menú izquierdo:
+   - Click en "WhatsApp" → "Get Started"
+
+==============================================================
+  PASO 2: Obtener credenciales
+==============================================================
+
+En la página de WhatsApp del dashboard de Meta obtendrás:
+
+  1. Phone Number ID    → Reemplazar en application.properties:
+                           whatsapp.phone-number-id=XXXXXXXXXX
+
+  2. Access Token (temporal de 23 horas):
+     - Para producción necesitas un token permanente
+     - Para pruebas, usa el temporal que te da Meta
+
+  3. Para el token permanente:
+     - Ve a "System Users" en Business Settings
+     - Crea un system user
+     - Genera un token con permisos de WhatsApp
+
+Reemplazar en application.properties:
+  whatsapp.token=TU_TOKEN_AQUI
+  whatsapp.phone-number-id=TU_PHONE_NUMBER_ID_AQUI
+
+==============================================================
+  PASO 3: Exponer localhost con ngrok
+==============================================================
+
+Meta necesita una URL pública para enviar los mensajes.
+Como trabajamos en localhost, usamos ngrok.
+
+1. Descargar ngrok: https://ngrok.com/download
+2. Crear cuenta gratuita y obtener tu authtoken
+3. Ejecutar:
+     ngrok http 8080
+
+4. ngrok te dará una URL como:
+     https://abc123.ngrok.io
+
+5. Copia esa URL, la usarás en el paso siguiente.
+
+==============================================================
+  PASO 4: Configurar Webhook en Meta
+==============================================================
+
+1. En el dashboard de WhatsApp de Meta:
+   - Click en "Configuration"
+   - Buscar "Webhook"
+   - Click en "Edit"
+   - Callback URL: https://TU-NGROK.ngrok.io/api/whatsapp/webhook
+   - Verify Token: minimarket_verify_token_2026
+     (este valor debe coincidir con application.properties)
+   - Click en "Verify and Save"
+
+2. Suscribirse al evento de mensajes:
+   - En "Webhook Fields"
+   - Click en "Subscribe" en "messages"
+
+==============================================================
+  PASO 5: Agregar número de prueba
+==============================================================
+
+En la versión de prueba de Meta, solo puedes enviar mensajes
+a números que hayas agregado:
+
+1. En el dashboard de WhatsApp
+   - Click en "To" (número de teléfono)
+   - Click en "Add Phone Number"
+   - Agrega los números de tus clientes de prueba
+   - Selecciona el código de país (+51 para Perú)
+
+==============================================================
+  PASO 6: Probar el flujo
+==============================================================
+
+1. Arrancar backend Spring Boot (puerto 8080)
+2. Arrancar ngrok: ngrok http 8080
+3. Configurar webhook en Meta con la URL de ngrok
+4. Enviar un mensaje de WhatsApp al número de prueba de Meta
+   (Meta te da un número en el dashboard)
+
+El bot responderá:
+  "¡Hola! 👋 Bienvenido a MiniMarket.
+   ¿Qué deseas hacer?
+   1️⃣ Hacer un pedido
+   2️⃣ Tengo una duda"
+
+Si respondes "1" → el bot pide productos
+Si respondes "2" → queda como consulta
+
+Inicia sesión como atencion1 / atencion123 en Angular
+y verás los pedidos en el dashboard de Atención al Cliente.
+
+==============================================================
+  ARCHIVOS IMPORTANTES
+==============================================================
+
+Backend:
+  application.properties  → Reemplazar token y phone-number-id
+  WhatsAppServiceImpl     → Lógica del bot
+  WhatsAppRestController  → Webhook + gestión de pedidos
+
+Frontend:
+  pedidos-whatsapp/       → Dashboard de Atención al Cliente
+  whatsapp.service.ts    → Service Angular
+  navbar.component.ts    → Menú específico para ATENCION_CLIENTE
+  inicio.component.ts    → Dashboard específico para ATENCION_CLIENTE
+
+==============================================================
+  VALORES POR DEFECTO
+==============================================================
+
+whatsapp.api-url=https://graph.facebook.com/v18.0
+whatsapp.token=TU_TOKEN_AQUI
+whatsapp.phone-number-id=TU_PHONE_NUMBER_ID_AQUI
+whatsapp.verify-token=minimarket_verify_token_2026
+
+==============================================================

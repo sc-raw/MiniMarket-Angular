@@ -14,12 +14,19 @@ export interface LoginResponse {
   rol: string;
 }
 
+// Roles disponibles en el sistema
+export const ROLES = {
+  ADMIN: 'ADMIN',
+  CAJERO: 'CAJERO',
+  REPONEDOR: 'REPONEDOR',
+  ATENCION_CLIENTE: 'ATENCION_CLIENTE'
+} as const;
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private readonly baseUrl = '/api/auth';
 
-  // Estado reactivo del usuario autenticado
   usuarioActual = signal<LoginResponse | null>(this.leerSesion());
 
   private leerSesion(): LoginResponse | null {
@@ -50,5 +57,95 @@ export class AuthService {
   tieneRol(rol: string): boolean {
     const u = this.usuarioActual();
     return u !== null && u.rol === rol;
+  }
+
+  // ================= MÉTODOS POR ROL =================
+
+  esAdmin(): boolean {
+    return this.tieneRol(ROLES.ADMIN);
+  }
+
+  esCajero(): boolean {
+    return this.tieneRol(ROLES.CAJERO);
+  }
+
+  esReponedor(): boolean {
+    return this.tieneRol(ROLES.REPONEDOR);
+  }
+
+  esAtencionCliente(): boolean {
+    return this.tieneRol(ROLES.ATENCION_CLIENTE);
+  }
+
+  // ================= PERMISOS ESPECÍFICOS =================
+
+  // ¿Puede ver el módulo de clientes?
+  puedeVerClientes(): boolean {
+    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+  }
+
+  // ¿Puede gestionar clientes (CRUD)?
+  puedeGestionarClientes(): boolean {
+    return this.puedeVerClientes();
+  }
+
+  // ¿Puede ver productos?
+  puedeVerProductos(): boolean {
+    return this.estaAutenticado();
+  }
+
+  // ¿Puede crear/editar/eliminar productos?
+  puedeGestionarProductos(): boolean {
+    return this.esAdmin();
+  }
+
+  // ¿Puede actualizar SOLO el stock de productos?
+  puedeActualizarStock(): boolean {
+    return this.esAdmin() || this.esReponedor();
+  }
+
+  // ¿Puede ver categorías?
+  puedeVerCategorias(): boolean {
+    return this.esAdmin() || this.esReponedor();
+  }
+
+  // ¿Puede gestionar categorías (CRUD)?
+  puedeGestionarCategorias(): boolean {
+    return this.esAdmin();
+  }
+
+  // ¿Puede gestionar empleados?
+  puedeGestionarEmpleados(): boolean {
+    return this.esAdmin();
+  }
+
+  // ¿Puede gestionar usuarios?
+  puedeGestionarUsuarios(): boolean {
+    return this.esAdmin();
+  }
+
+  // ¿Puede ver ventas?
+  puedeVerVentas(): boolean {
+    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+  }
+
+  // ¿Puede crear ventas?
+  puedeCrearVentas(): boolean {
+    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+  }
+
+  // ¿Puede ver reportes financieros (ventas, totales)?
+  puedeVerReportesFinancieros(): boolean {
+    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+  }
+
+  // ¿Puede ver reportes de stock (vencidos, stock bajo)?
+  puedeVerReportesStock(): boolean {
+    return this.esAdmin() || this.esReponedor();
+  }
+
+  // ¿Puede ver TODOS los reportes?
+  puedeVerTodosReportes(): boolean {
+    return this.esAdmin();
   }
 }

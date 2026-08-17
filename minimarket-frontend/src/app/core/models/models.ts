@@ -25,6 +25,7 @@ export interface Producto {
   precio: number;
   stock?: number;
   estado?: boolean;
+  fechaVencimiento?: string | null;  // ISO date (yyyy-MM-dd) o null si no perecedero
   categoria: Categoria | null;
 }
 
@@ -43,6 +44,10 @@ export interface Empleado {
 
 export interface Cajero extends Empleado {
   turno: string;
+}
+
+export interface Reponedor extends Empleado {
+  area: string;
 }
 
 export interface DetalleVenta {
@@ -73,4 +78,17 @@ export interface CrearVentaRequest {
   clienteId: number;
   cajeroId: number;
   productos: DetalleVentaRequest[];
+}
+
+export interface PedidoWhatsApp {
+  id?: number;
+  numeroRemitente: string;
+  nombreRemitente?: string;
+  tipo?: string;        // "PEDIDO" o "CONSULTA"
+  mensaje: string;
+  estado: string;       // NUEVO, PENDIENTE, EN_PROCESO, ATENDIDO
+  respuesta?: string;
+  fechaRegistro?: string;
+  fechaAtencion?: string;
+  ventaId?: number;
 }

@@ -1,24 +1,36 @@
 import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { ProductoService } from '../../core/services/producto.service';
 import { CategoriaService } from '../../core/services/categoria.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { Producto, Categoria } from '../../core/models/models';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container mt-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2>Productos</h2>
-          <p class="text-muted">Gestión de productos registrados.</p>
+          <p class="text-muted">
+            @if (auth.puedeGestionarProductos()) {
+              Gestión completa de productos.
+            } @else if (auth.puedeActualizarStock()) {
+              Actualización de stock de productos.
+            } @else {
+              Lista de productos (solo lectura).
+            }
+          </p>
         </div>
-        <button class="btn btn-success" (click)="abrirFormulario()">
-          <i class="bi bi-plus-circle"></i> Nuevo Producto
-        </button>
+        @if (auth.puedeGestionarProductos()) {
+          <button class="btn btn-success" (click)="abrirFormulario()">
+            <i class="bi bi-plus-circle"></i> Nuevo Producto
+          </button>
+        }
       </div>
 
       @if (error()) {
@@ -35,21 +47,17 @@ import { Producto, Categoria } from '../../core/models/models';
       }
 
       @if (cargando()) {
-        <div class="text-center py-5">
-          <div class="spinner-border text-success" role="status"></div>
-        </div>
+        <div class="text-center py-5"><div class="spinner-border text-success" role="status"></div></div>
       } @else {
         <div class="card shadow">
           <div class="card-body">
-
             <!-- Buscador + filtros -->
             <div class="row mb-3 g-2 align-items-center">
               <div class="col-md-6">
-                <input type="text"
-                       class="form-control"
+                <input type="text" class="form-control"
                        placeholder="Buscar por nombre o código..."
                        [ngModel]="textoBusqueda()"
-                       (ngModelChange)="textoBusqueda.set($event); buscar()"
+                       (ngModelChange)="textoBusqueda.set($event); aplicarFiltros()"
                        name="busqueda">
               </div>
               <div class="col-md-6 text-md-end">
@@ -57,21 +65,15 @@ import { Producto, Categoria } from '../../core/models/models';
                   <button type="button" class="btn"
                           [class.btn-success]="filtroEstado() === 'TODOS'"
                           [class.btn-outline-success]="filtroEstado() !== 'TODOS'"
-                          (click)="setFiltro('TODOS')">
-                    Todos
-                  </button>
+                          (click)="setFiltro('TODOS')">Todos</button>
                   <button type="button" class="btn"
                           [class.btn-success]="filtroEstado() === 'ACTIVOS'"
                           [class.btn-outline-success]="filtroEstado() !== 'ACTIVOS'"
-                          (click)="setFiltro('ACTIVOS')">
-                    Activos
-                  </button>
+                          (click)="setFiltro('ACTIVOS')">Activos</button>
                   <button type="button" class="btn"
                           [class.btn-success]="filtroEstado() === 'INACTIVOS'"
                           [class.btn-outline-success]="filtroEstado() !== 'INACTIVOS'"
-                          (click)="setFiltro('INACTIVOS')">
-                    Inactivos
-                  </button>
+                          (click)="setFiltro('INACTIVOS')">Inactivos</button>
                 </div>
               </div>
             </div>
@@ -85,8 +87,11 @@ import { Producto, Categoria } from '../../core/models/models';
                   <th>Categoría</th>
                   <th>Precio</th>
                   <th>Stock</th>
+                  <th>Vencimiento</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  @if (auth.puedeGestionarProductos() || auth.puedeActualizarStock()) {
+                    <th>Acciones</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -104,6 +109,18 @@ import { Producto, Categoria } from '../../core/models/models';
                         {{ p.stock }}
                       </span>
                     </td>
+                    <td class="text-center">
+                      @if (p.fechaVencimiento) {
+                        <span class="badge"
+                              [class.bg-danger]="estaVencido(p.fechaVencimiento)"
+                              [class.bg-warning]="!estaVencido(p.fechaVencimiento) && estaProximoAVencer(p.fechaVencimiento)"
+                              [class.bg-secondary]="!estaVencido(p.fechaVencimiento) && !estaProximoAVencer(p.fechaVencimiento)">
+                          {{ p.fechaVencimiento | date:'dd/MM/yyyy' }}
+                        </span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
                     <td>
                       @if (p.estado) {
                         <span class="badge bg-success">Activo</span>
@@ -111,18 +128,26 @@ import { Producto, Categoria } from '../../core/models/models';
                         <span class="badge bg-danger">Inactivo</span>
                       }
                     </td>
-                    <td>
-                      <button class="btn btn-warning btn-sm me-1" (click)="editar(p)">
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button class="btn btn-danger btn-sm" (click)="eliminar(p)">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
+                    @if (auth.puedeGestionarProductos() || auth.puedeActualizarStock()) {
+                      <td>
+                        @if (auth.puedeGestionarProductos()) {
+                          <button class="btn btn-warning btn-sm me-1" (click)="editar(p)" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="btn btn-danger btn-sm" (click)="eliminar(p)" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        } @else if (auth.puedeActualizarStock()) {
+                          <button class="btn btn-info btn-sm" (click)="abrirFormularioStock(p)" title="Actualizar Stock">
+                            <i class="bi bi-box-seam"></i> Stock
+                          </button>
+                        }
+                      </td>
+                    }
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="9" class="text-center text-muted py-4">
                       No hay productos con esos filtros.
                     </td>
                   </tr>
@@ -133,7 +158,7 @@ import { Producto, Categoria } from '../../core/models/models';
         </div>
       }
 
-      @if (mostrarFormulario()) {
+      @if (auth.puedeGestionarProductos() && mostrarFormulario()) {
         <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
           <div class="modal-dialog">
             <div class="modal-content">
@@ -172,6 +197,14 @@ import { Producto, Categoria } from '../../core/models/models';
                              [(ngModel)]="productoEditando.stock" required>
                     </div>
                     <div class="col-md-6 mb-3">
+                      <label class="form-label fw-bold">
+                        Vencimiento <small class="text-muted">(opcional)</small>
+                      </label>
+                      <input type="date" class="form-control" name="fechaVencimiento"
+                             [ngModel]="productoEditando.fechaVencimiento"
+                             (ngModelChange)="productoEditando.fechaVencimiento = $event || null">
+                    </div>
+                    <div class="col-md-6 mb-3">
                       <label class="form-label fw-bold">Categoría</label>
                       <select class="form-select" name="categoria"
                               [(ngModel)]="productoEditando.categoria" required>
@@ -190,9 +223,7 @@ import { Producto, Categoria } from '../../core/models/models';
                     </div>
                   </div>
                   <div class="text-end">
-                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
-                      Cancelar
-                    </button>
+                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
                     <button type="submit" class="btn btn-success" [disabled]="guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
@@ -207,12 +238,55 @@ import { Producto, Categoria } from '../../core/models/models';
           </div>
         </div>
       }
+
+      @if (auth.puedeActualizarStock() && !auth.puedeGestionarProductos() && mostrarFormularioStock()) {
+        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+          <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+              <div class="modal-header text-white" style="background:#0288D1;">
+                <h5 class="modal-title">
+                  <i class="bi bi-box-seam me-2"></i>Actualizar Stock
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="cerrarFormularioStock()"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Producto</label>
+                  <p class="form-control-plaintext fw-bold">{{ productoStockEditando()?.nombre }}</p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Stock Actual</label>
+                  <p class="form-control-plaintext">
+                    <span class="badge bg-secondary fs-6">{{ productoStockEditando()?.stock }}</span>
+                  </p>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Nuevo Stock</label>
+                  <input type="number" min="0" class="form-control" name="nuevoStock"
+                         [(ngModel)]="nuevoStock" required>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="cerrarFormularioStock()">Cancelar</button>
+                <button type="button" class="btn btn-info" (click)="guardarStock()" [disabled]="guardando()">
+                  @if (guardando()) {
+                    <span class="spinner-border spinner-border-sm"></span> Guardando...
+                  } @else {
+                    <i class="bi bi-check-circle"></i> Actualizar
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `
 })
 export class ProductosComponent implements OnInit {
   private productoService = inject(ProductoService);
   private categoriaService = inject(CategoriaService);
+  protected auth = inject(AuthService);
 
   productos = signal<Producto[]>([]);
   productosFiltrados = signal<Producto[]>([]);
@@ -220,6 +294,7 @@ export class ProductosComponent implements OnInit {
   cargando = signal(true);
   guardando = signal(false);
   mostrarFormulario = signal(false);
+  mostrarFormularioStock = signal(false);
   mensaje = signal('');
   error = signal('');
 
@@ -227,6 +302,8 @@ export class ProductosComponent implements OnInit {
   textoBusqueda = signal('');
 
   productoEditando: Producto = this.productoVacio();
+  productoStockEditando = signal<Producto | null>(null);
+  nuevoStock = 0;
 
   ngOnInit(): void {
     this.cargar();
@@ -254,19 +331,14 @@ export class ProductosComponent implements OnInit {
     const estado = this.filtroEstado();
     let lista = this.productos();
 
-    if (estado === 'ACTIVOS') {
-      lista = lista.filter(p => p.estado === true);
-    } else if (estado === 'INACTIVOS') {
-      lista = lista.filter(p => p.estado === false);
-    }
-
+    if (estado === 'ACTIVOS') lista = lista.filter(p => p.estado === true);
+    else if (estado === 'INACTIVOS') lista = lista.filter(p => p.estado === false);
     if (texto) {
       lista = lista.filter(p =>
         (p.nombre ?? '').toLowerCase().includes(texto) ||
         (p.codigo ?? '').toLowerCase().includes(texto)
       );
     }
-
     this.productosFiltrados.set(lista);
   }
 
@@ -275,39 +347,27 @@ export class ProductosComponent implements OnInit {
     this.aplicarFiltros();
   }
 
-  buscar(): void {
-    this.aplicarFiltros();
-  }
-
   private productoVacio(): Producto {
     return {
-      codigo: '',
-      nombre: '',
-      descripcion: '',
-      precio: 0,
-      stock: 0,
-      estado: true,
-      categoria: null
+      codigo: '', nombre: '', descripcion: '', precio: 0,
+      stock: 0, estado: true, fechaVencimiento: null, categoria: null
     };
   }
 
+  // ====== CRUD (solo admin) ======
   abrirFormulario(): void {
     this.productoEditando = this.productoVacio();
     this.mostrarFormulario.set(true);
   }
 
   editar(p: Producto): void {
-  this.productoEditando = { ...p };
-
-  if (p.categoria?.idCategoria != null) {
-    const encontrada = this.categorias().find(
-      c => c.idCategoria === p.categoria!.idCategoria
-    );
-    this.productoEditando.categoria = encontrada ?? p.categoria;
+    this.productoEditando = { ...p };
+    if (p.categoria?.idCategoria != null) {
+      const encontrada = this.categorias().find(c => c.idCategoria === p.categoria!.idCategoria);
+      this.productoEditando.categoria = encontrada ?? p.categoria;
+    }
+    this.mostrarFormulario.set(true);
   }
-
-  this.mostrarFormulario.set(true);
-}
 
   cerrarFormulario(): void {
     this.mostrarFormulario.set(false);
@@ -343,5 +403,55 @@ export class ProductosComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  // ====== ACTUALIZAR STOCK (admin y reponedor) ======
+  abrirFormularioStock(p: Producto): void {
+    this.productoStockEditando.set({ ...p });
+    this.nuevoStock = p.stock ?? 0;
+    this.mostrarFormularioStock.set(true);
+  }
+
+  cerrarFormularioStock(): void {
+    this.mostrarFormularioStock.set(false);
+  }
+
+  guardarStock(): void {
+    const producto = this.productoStockEditando();
+    if (!producto || !producto.idProducto) return;
+    if (this.nuevoStock == null || this.nuevoStock < 0) {
+      this.error.set('El stock debe ser mayor o igual a 0.');
+      return;
+    }
+    this.guardando.set(true);
+    this.error.set('');
+    this.productoService.actualizarStock(producto.idProducto, this.nuevoStock).subscribe({
+      next: () => {
+        this.guardando.set(false);
+        this.cerrarFormularioStock();
+        this.mensaje.set(`Stock actualizado: ${producto.nombre} → ${this.nuevoStock} unidades.`);
+        this.cargar();
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.error.set(typeof err?.error === 'string' ? err.error : 'Error al actualizar stock.');
+        console.error(err);
+      }
+    });
+  }
+
+  // ====== VENCIMIENTO ======
+  estaVencido(fecha: string | null | undefined): boolean {
+    if (!fecha) return false;
+    return new Date(fecha) < new Date(new Date().toISOString().split('T')[0]);
+  }
+
+  estaProximoAVencer(fecha: string | null | undefined): boolean {
+    if (!fecha) return false;
+    const hoy = new Date();
+    const limite = new Date();
+    limite.setDate(hoy.getDate() + 7);
+    const f = new Date(fecha);
+    return f >= hoy && f <= limite;
   }
 }

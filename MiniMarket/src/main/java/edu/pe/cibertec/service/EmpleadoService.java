@@ -4,6 +4,7 @@ import java.util.List;
 
 import edu.pe.cibertec.entity.Cajero;
 import edu.pe.cibertec.entity.Empleado;
+import edu.pe.cibertec.entity.Reponedor;
 
 public interface EmpleadoService {
 
@@ -16,6 +17,8 @@ public interface EmpleadoService {
     List<Empleado> buscarPorApellidoConteniendo(String texto);
 
     List<Cajero> listarCajerosActivos();
-    
     List<Cajero> listarTodosCajeros();
+
+    List<Reponedor> listarReponedoresActivos();
+    List<Reponedor> listarTodosReponedores();
 }

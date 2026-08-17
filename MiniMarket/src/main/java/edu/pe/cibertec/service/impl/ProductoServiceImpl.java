@@ -57,4 +57,17 @@ public class ProductoServiceImpl implements ProductoService {
                 .filter(p -> Boolean.TRUE.equals(p.getEstado()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public Producto actualizarStock(Integer id, Integer nuevoStock) {
+        Producto producto = repository.findById(id).orElse(null);
+        if (producto == null) {
+            throw new RuntimeException("Producto no encontrado con ID: " + id);
+        }
+        if (nuevoStock == null || nuevoStock < 0) {
+            throw new RuntimeException("El stock debe ser mayor o igual a 0.");
+        }
+        producto.setStock(nuevoStock);
+        return repository.save(producto);
+    }
 }

@@ -1,0 +1,114 @@
+package edu.pe.cibertec.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import edu.pe.cibertec.entity.PedidoWhatsApp;
+import edu.pe.cibertec.whatsapp.WhatsAppService;
+
+/**
+ * Controlador REST para la integración de WhatsApp con Meta Business API.
+ *
+ * Endpoints:
+ *   GET  /api/whatsapp/webhook      → Verificación del webhook (Meta lo llama al configurar)
+ *   POST /api/whatsapp/webhook      → Recibe mensajes de los clientes
+ *   GET  /api/whatsapp/pedidos      → Lista todos los pedidos/consultas (atención al cliente)
+ *   GET  /api/whatsapp/pedidos/pendientes → Lista solo los pendientes
+ *   GET  /api/whatsapp/pedidos/tipo/{tipo} → Lista por tipo (PEDIDO o CONSULTA)
+ *   PUT  /api/whatsapp/pedidos/{id}/en-proceso → Marca como en revisión
+ *   PUT  /api/whatsapp/pedidos/{id}/atender   → Atiende con respuesta y envía WhatsApp
+ */
+@RestController
+@RequestMapping("/api/whatsapp")
+public class WhatsAppRestController {
+
+    @Autowired
+    private WhatsAppService whatsappService;
+
+    @Value("${whatsapp.verify-token:VERIFY_TOKEN_PLACEHOLDER}")
+    private String verifyToken;
+
+    // ============ WEBHOOK ============
+
+    /**
+     * Verificación del webhook — Meta lo llama cuando configuras la URL en el dashboard.
+     * Devuelve el challenge si el token coincide.
+     */
+    @GetMapping("/webhook")
+    public ResponseEntity<String> verificarWebhook(
+            @RequestParam("hub.mode") String mode,
+            @RequestParam("hub.verify_token") String token,
+            @RequestParam("hub.challenge") String challenge) {
+        if ("subscribe".equals(mode) && verifyToken.equals(token)) {
+            System.out.println(">>> Webhook verificado correctamente.");
+            return ResponseEntity.ok(challenge);
+        }
+        return ResponseEntity.status(403).body("Verificación fallida");
+    }
+
+    /**
+     * Recibe los mensajes de WhatsApp de los clientes.
+     * Meta envía los mensajes aquí cuando un cliente escribe al número del bot.
+     */
+    @PostMapping("/webhook")
+    public ResponseEntity<String> recibirMensaje(@RequestBody String payload) {
+        try {
+            // Extraer número, nombre y mensaje del payload de Meta
+            // Formato simplificado — Meta envía JSON anidado
+            String numeroRemitente = extraerValor(payload, "\"wa_id\":\"", "\"");
+            String nombreRemitente = extraerValor(payload, "\"first_name\":\"", "\"");
+            String mensaje = extraerValor(payload, "\"body\":\"", "\"");
+
+            if (numeroRemitente != null && mensaje != null) {
+                whatsappService.procesarMensajeEntrante(numeroRemitente, nombreRemitente, mensaje);
+            }
+            return ResponseEntity.ok("EVENT_RECEIVED");
+        } catch (Exception e) {
+            System.err.println(">>> Error procesando webhook: " + e.getMessage());
+            return ResponseEntity.ok("EVENT_RECEIVED");
+        }
+    }
+
+    /** Método auxiliar para extraer valores del JSON de Meta. */
+    private String extraerValor(String json, String inicio, String fin) {
+        int start = json.indexOf(inicio);
+        if (start == -1) return null;
+        start += inicio.length();
+        int end = json.indexOf(fin, start);
+        if (end == -1) return null;
+        return json.substring(start, end);
+    }
+
+    // ============ GESTIÓN DE PEDIDOS (atención al cliente) ============
+
+    @GetMapping("/pedidos")
+    public List<PedidoWhatsApp> listarTodos() {
+        return whatsappService.listarTodos();
+    }
+
+    @GetMapping("/pedidos/pendientes")
+    public List<PedidoWhatsApp> listarPendientes() {
+        return whatsappService.listarPendientes();
+    }
+
+    @GetMapping("/pedidos/tipo/{tipo}")
+    public List<PedidoWhatsApp> listarPorTipo(@PathVariable String tipo) {
+        return whatsappService.listarPorTipo(tipo);
+    }
+
+    @PutMapping("/pedidos/{id}/en-proceso")
+    public ResponseEntity<?> marcarEnProceso(@PathVariable Long id) {
+        PedidoWhatsApp p = whatsappService.marcarEnProceso(id);
+        return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/pedidos/{id}/atender")
+    public ResponseEntity<?> atender(@PathVariable Long id, @RequestParam String respuesta) {
+        PedidoWhatsApp p = whatsappService.atender(id, respuesta);
+        return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
+    }
+}

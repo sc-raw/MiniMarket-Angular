@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<libraryInfos>
+    <libraryInfo home="/usr/lib/jvm/java-26-openjdk" version="26.0.2"/>
+    <libraryInfo home="/usr/lib/jvm/java-21-openjdk" version="21.0.12">
+        <bootpath>
+            <entry path="null"/>
+        </bootpath>
+        <extensionDirs>
+            <entry path="null"/>
+        </extensionDirs>
+        <endorsedDirs>
+            <entry path="null"/>
+        </endorsedDirs>
+    </libraryInfo>
+    <libraryInfo home="/home/marc/Descargas/sts-5.2.0.RELEASE/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_25.0.3.v20260502-0818/jre" version="25.0.3"/>
+    <libraryInfo home="/usr/lib/jvm/java-17-openjdk" version="17.0.20"/>
+    <libraryInfo home="/home/marc/Descargas/sts-5.2.0.RELEASE/plugins/org.eclipse.justj.openjdk.hotspot.jre.full.linux.x86_64_25.0.3.v20260502-0818" version="25.0.3">
+        <bootpath>
+            <entry path="null"/>
+        </bootpath>
+        <extensionDirs>
+            <entry path="null"/>
+        </extensionDirs>
+        <endorsedDirs>
+            <entry path="null"/>
+        </endorsedDirs>
+    </libraryInfo>
+</libraryInfos>

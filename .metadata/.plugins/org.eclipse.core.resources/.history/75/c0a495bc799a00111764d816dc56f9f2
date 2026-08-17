@@ -1,0 +1,42 @@
+spring.application.name=MiniMarket
+
+server.port=8080
+
+# ===============================
+# BASE DE DATOS
+# ===============================
+spring.datasource.url=jdbc:mysql://localhost:3306/DBMiniMarket?createDatabaseIfNotExist=true
+spring.datasource.username=root
+spring.datasource.password=bubito1011
+
+# ===============================
+# JPA / HIBERNATE
+# ===============================
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+
+# ===============================
+# THYMELEAF
+# ===============================
+spring.thymeleaf.cache=false
+
+# ===============================
+# WHATSAPP BUSINESS API (Meta)
+# ===============================
+# Reemplazar estos valores con los de tu Meta Business API
+# Los obtienes en: https://developers.facebook.com/apps/
+#   1. Crear una app de tipo "Business"
+#   2. Agregar producto "WhatsApp"
+#   3. Copiar el Access Token (token permanente)
+#   4. Copiar el Phone Number ID
+#   5. Inventar un verify token (cualquier texto) y configurarlo en el webhook
+#   6. Exponer localhost con ngrok: ngrok http 8080
+#   7. En Meta, configurar webhook URL: https://TU-NGROK.ngrok.io/api/whatsapp/webhook
+#      y suscribir el campo "messages"
+
+whatsapp.api-url=https://graph.facebook.com/v18.0
+whatsapp.token=EAAVxlmZA05i0BSMPOBPcodLGYKnrSXMlQpGip1zt7X5AqC5knvjfAZBQ8Q9zl1faMWFu7UFmHGZAwvLKQyQiQZClLjgZCRZCjzSZACqEKrbsWSmKfaECRoF2Jt08YfIJEDbXPhfzcb5coWyw3Nh2KwxksechVBQcrdQE7TGENtJaY74srv7rlnmgZCuAGa4LCfqPHZAEBkNd98VLnMcox3NGTvENQe1ZAHRLMHp46iWHTMRpJot9Dorqh1Nx6esy5XDdsXF9mdRqUH8uktlobmWG3A6uNsbAZDZD
+whatsapp.phone-number-id=1331854123337912
+whatsapp.verify-token=minimarket_verify_token_2026

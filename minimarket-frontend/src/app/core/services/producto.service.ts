@@ -26,4 +26,9 @@ export class ProductoService {
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  // Actualiza SOLO el stock (para reponedores)
+  actualizarStock(id: number, stock: number): Observable<Producto> {
+    return this.http.patch<Producto>(`${this.baseUrl}/${id}/stock?stock=${stock}`, {});
+  }
 }
