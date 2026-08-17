@@ -3,3 +3,8 @@ minimarket-frontend/node_modules/
 minimarket-frontend/dist/
 minimarket-frontend/.angular/
 Thumbs.db
+.metadata/
+*.classpath
+*.project
+*.factorypath
+.settings/
