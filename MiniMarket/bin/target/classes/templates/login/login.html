@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Login')}"></head>
+<body class="bg-light">
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-header text-center text-white" style="background:#2E7D32;">
+                    <h3 class="mt-2"><i class="bi bi-cart-fill"></i> MiniMarket</h3>
+                    <small>Sistema de Gestión de Ventas</small>
+                </div>
+                <div class="card-body p-4">
+                    <div th:if="${param.error}" class="alert alert-danger">
+                        Usuario o contraseña incorrectos.
+                    </div>
+                    <div th:if="${param.logout}" class="alert alert-success">
+                        Sesión cerrada correctamente.
+                    </div>
+                    <form th:action="@{/login}" method="post">
+                        <div class="mb-3">
+                            <label class="fw-bold">Usuario</label>
+                            <input type="text" name="username" class="form-control" required autofocus>
+                        </div>
+                        <div class="mb-4">
+                            <label class="fw-bold">Contraseña</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-success btn-lg">Ingresar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center text-muted py-3" style="background:#f8f9fa;">
+                    <small>
+                        Usuarios: <strong>admin/admin123</strong> (ADMIN),
+                        <strong>cajero/cajero123</strong> (CAJERO),
+                        <strong>reponedor/reponedor123</strong> (REPONEDOR)
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/header :: header('MiniMarket')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4">
+    <div class="card shadow border-0 mb-4">
+        <div class="card-body text-center p-5">
+            <h1 class="fw-bold text-success"><i class="bi bi-cart-fill"></i> MiniMarket</h1>
+            <h4 class="text-secondary">Sistema de Gestión de Ventas de MiniMarket</h4>
+            <p class="lead">Sistema integral para la gestión de clientes, productos, categorías y ventas.</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasAnyRole('ADMIN','CAJERO')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>👤</h1><h4>Clientes</h4>
+                    <a class="btn btn-success" th:href="@{/clientes}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasRole('ADMIN')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>🏷️</h1><h4>Categorías</h4>
+                    <a class="btn btn-success" th:href="@{/categorias}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasAnyRole('ADMIN','CAJERO','REPONEDOR')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>📦</h1><h4>Productos</h4>
+                    <a class="btn btn-success" th:href="@{/productos}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasRole('ADMIN')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>👨‍🔧</h1><h4>Empleados</h4>
+                    <a class="btn btn-success" th:href="@{/empleados}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasAnyRole('ADMIN','CAJERO','REPONEDOR')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>🛒</h1><h4>Ventas</h4>
+                    <a class="btn btn-success" th:href="@{/ventas}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4" sec:authorize="hasRole('ADMIN')">
+            <div class="card h-100 shadow-sm text-center">
+                <div class="card-body">
+                    <h1>👥</h1><h4>Usuarios</h4>
+                    <a class="btn btn-success" th:href="@{/usuarios}">Ingresar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>

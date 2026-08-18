@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Ventas')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <div class="d-flex justify-content-between">
+                <h3 class="mb-0"><i class="bi bi-cart-check"></i> Ventas</h3>
+                <a th:href="@{/ventas/nuevo}" class="btn btn-light"><i class="bi bi-plus-circle"></i> Nueva Venta</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-dark"><tr class="text-center">
+                        <th>ID</th><th>Cliente</th><th>Cajero</th><th>Fecha</th>
+                        <th>Total</th><th>Estado</th><th>Acciones</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr th:each="v : ${ventas}">
+                            <td class="text-center" th:text="${v.id}"></td>
+                            <td th:text="${v.cliente.nombres + ' ' + v.cliente.apellidos}"></td>
+                            <td th:text="${v.cajero.nombres + ' ' + v.cajero.apellidos}"></td>
+                            <td class="text-center" th:text="${#temporals.format(v.fechaRegistro,'yyyy-MM-dd HH:mm')}"></td>
+                            <td class="text-end fw-bold" th:text="'S/. ' + ${#numbers.formatDecimal(v.total,1,'POINT',2,'COMMA')}"></td>
+                            <td class="text-center">
+                                <span th:if="${v.estado == 'PENDIENTE'}" class="badge bg-warning text-dark">PENDIENTE</span>
+                                <span th:if="${v.estado == 'EN_PROCESO'}" class="badge bg-info text-dark">EN PROCESO</span>
+                                <span th:if="${v.estado == 'FINALIZADA'}" class="badge bg-primary">FINALIZADA</span>
+                                <span th:if="${v.estado == 'CANCELADA'}" class="badge bg-danger">CANCELADA</span>
+                            </td>
+                            <td class="text-center">
+                                <a th:href="@{/ventas/detalle/{id}(id=${v.id})}" class="btn btn-info btn-sm text-white"><i class="bi bi-eye"></i></a>
+                                <a th:if="${v.estado == 'PENDIENTE'}" th:href="@{/ventas/estado/{id}/{e}(id=${v.id},e='EN_PROCESO')}" class="btn btn-primary btn-sm"><i class="bi bi-play-fill"></i></a>
+                                <a th:if="${v.estado == 'EN_PROCESO'}" th:href="@{/ventas/estado/{id}/{e}(id=${v.id},e='FINALIZADA')}" class="btn btn-success btn-sm"><i class="bi bi-check2-all"></i></a>
+                                <a th:if="${v.estado == 'PENDIENTE'}" th:href="@{/ventas/estado/{id}/{e}(id=${v.id},e='CANCELADA')}" class="btn btn-danger btn-sm"><i class="bi bi-x"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(ventas)}"><td colspan="7" class="text-center text-muted">No hay ventas.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

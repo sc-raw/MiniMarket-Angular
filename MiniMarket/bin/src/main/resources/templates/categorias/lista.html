@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Categorías')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <div class="d-flex justify-content-between">
+                <h3 class="mb-0"><i class="bi bi-tags"></i> Categorías</h3>
+                <a th:href="@{/categorias/nuevo}" class="btn btn-light"><i class="bi bi-plus-circle"></i> Nueva</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-dark"><tr class="text-center"><th>ID</th><th>Nombre</th><th>Acciones</th></tr></thead>
+                    <tbody>
+                        <tr th:each="c : ${categorias}">
+                            <td class="text-center" th:text="${c.idCategoria}"></td>
+                            <td th:text="${c.nombre}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/categorias/editar/{id}(id=${c.idCategoria})}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-danger btn-sm" th:onclick="|confirmarEliminacion('@{/categorias/eliminar/{id}(id=${c.idCategoria})}')|"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(categorias)}"><td colspan="3" class="text-center text-muted">No hay categorías.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

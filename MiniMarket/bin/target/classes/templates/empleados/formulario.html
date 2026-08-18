@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Empleado')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <h3 class="mb-0"><i class="bi bi-person-workspace"></i>
+                <span th:if="${empleado.id == null}">Nuevo Empleado</span>
+                <span th:unless="${empleado.id == null}">Editar Empleado</span>
+            </h3>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/empleados/guardar}" th:object="${empleado}" method="post" onsubmit="return confirmarGuardar(this)">
+                <input type="hidden" th:field="*{id}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">DNI</label>
+                        <input type="text" class="form-control" th:field="*{dni}" maxlength="8" required th:readonly="${empleado.id != null}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Nombres</label>
+                        <input type="text" class="form-control" th:field="*{nombres}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Apellidos</label>
+                        <input type="text" class="form-control" th:field="*{apellidos}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Dirección</label>
+                        <input class="form-control" th:field="*{direccion}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Teléfono</label>
+                        <input class="form-control" th:field="*{telefono}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Correo</label>
+                        <input type="email" class="form-control" th:field="*{correo}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Fecha Ingreso</label>
+                        <input type="date" class="form-control" th:field="*{fechaIngreso}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Salario</label>
+                        <input type="number" step="0.01" class="form-control" th:field="*{salario}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Tipo</label>
+                        <select class="form-select" id="tipo" name="tipo" onchange="cambiarTipo()">
+                            <option value="CAJERO" th:selected="${tipo == 'CAJERO'}">Cajero</option>
+                            <option value="REPONEDOR" th:selected="${tipo == 'REPONEDOR'}">Reponedor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Estado</label>
+                        <select class="form-select" th:field="*{estado}">
+                            <option th:value="true">Activo</option>
+                            <option th:value="false">Inactivo</option>
+                        </select>
+                    </div>
+                    <div id="panelTurno" class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Turno</label>
+                        <select class="form-select" name="turno">
+                            <option value="MAÑANA" th:selected="${turno == 'MAÑANA'}">Mañana</option>
+                            <option value="TARDE" th:selected="${turno == 'TARDE'}">Tarde</option>
+                            <option value="NOCHE" th:selected="${turno == 'NOCHE'}">Noche</option>
+                        </select>
+                    </div>
+                    <div id="panelArea" class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Área</label>
+                        <select class="form-select" name="area">
+                            <option value="ALMACEN" th:selected="${area == 'ALMACEN'}">Almacén</option>
+                            <option value="FRUTAS" th:selected="${area == 'FRUTAS'}">Frutas</option>
+                            <option value="LACTEOS" th:selected="${area == 'LACTEOS'}">Lácteos</option>
+                            <option value="ABARROTES" th:selected="${area == 'ABARROTES'}">Abarrotes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-success">Guardar</button>
+                    <a th:href="@{/empleados}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+<script>
+    function cambiarTipo(){
+        const t = document.getElementById("tipo").value;
+        document.getElementById("panelTurno").style.display = (t === "CAJERO") ? "block" : "none";
+        document.getElementById("panelArea").style.display = (t === "REPONEDOR") ? "block" : "none";
+    }
+    window.addEventListener("DOMContentLoaded", cambiarTipo);
+</script>
+</body>
+</html>

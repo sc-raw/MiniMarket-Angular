@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Categoría')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <h3 class="mb-0"><i class="bi bi-tag"></i>
+                <span th:if="${categoria.idCategoria == null}">Nueva Categoría</span>
+                <span th:unless="${categoria.idCategoria == null}">Editar Categoría</span>
+            </h3>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/categorias/guardar}" th:object="${categoria}" method="post" onsubmit="return confirmarGuardar(this)">
+                <input type="hidden" th:field="*{idCategoria}">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nombre</label>
+                    <input type="text" class="form-control" th:field="*{nombre}" required>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-success">Guardar</button>
+                    <a th:href="@{/categorias}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

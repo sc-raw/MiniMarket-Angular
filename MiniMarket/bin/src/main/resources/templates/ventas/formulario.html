@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Nueva Venta')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <h3 class="mb-0"><i class="bi bi-cart-plus"></i> Nueva Venta</h3>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/ventas/guardar}" method="post">
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Cliente</label>
+                        <select name="clienteId" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.dni + ' - ' + c.nombres + ' ' + c.apellidos}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Cajero</label>
+                        <select name="cajeroId" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option th:each="c : ${cajeros}" th:value="${c.id}" th:text="${c.dni + ' - ' + c.nombres + ' ' + c.apellidos + ' (' + c.turno + ')'}"></option>
+                        </select>
+                    </div>
+                </div>
+                <hr>
+                <h5 class="fw-bold mb-3"><i class="bi bi-list-check"></i> Productos a vender</h5>
+                <div id="productosContainer">
+                    <div class="row detalle-row mb-2">
+                        <div class="col-md-8">
+                            <select name="productos[0].productoId" class="form-select" required>
+                                <option value="">Seleccione producto...</option>
+                                <option th:each="p : ${productos}" th:value="${p.idProducto}" th:text="${p.codigo + ' - ' + p.nombre + ' (S/. ' + #numbers.formatDecimal(p.precio,1,'POINT',2,'COMMA') + ') - Stock: ' + p.stock}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" name="productos[0].cantidad" class="form-control" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="eliminarFila(this)"><i class="bi bi-dash"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="agregarFila()"><i class="bi bi-plus-circle"></i> Agregar producto</button>
+                <hr>
+                <div class="text-end">
+                    <button class="btn btn-success"><i class="bi bi-check-circle"></i> Registrar Venta</button>
+                    <a th:href="@{/ventas}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+<script>
+    function agregarFila() {
+        const c = document.getElementById('productosContainer');
+        const filas = c.getElementsByClassName('detalle-row');
+        const idx = filas.length;
+        const nueva = filas[0].cloneNode(true);
+        nueva.querySelectorAll('select, input').forEach(i => {
+            const n = i.getAttribute('name');
+            if (n) i.setAttribute('name', n.replace(/\[\d+\]/, '[' + idx + ']'));
+            if (i.tagName === 'SELECT') i.value = '';
+            if (i.type === 'number') i.value = '1';
+        });
+        c.appendChild(nueva);
+    }
+    function eliminarFila(b) {
+        const c = document.getElementById('productosContainer');
+        if (c.getElementsByClassName('detalle-row').length > 1) b.closest('.detalle-row').remove();
+    }
+</script>
+</body>
+</html>

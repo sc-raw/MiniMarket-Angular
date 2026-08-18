@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Usuarios')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <div class="d-flex justify-content-between">
+                <h3 class="mb-0"><i class="bi bi-people-fill"></i> Usuarios</h3>
+                <a th:href="@{/usuarios/nuevo}" class="btn btn-light"><i class="bi bi-plus-circle"></i> Nuevo</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-dark"><tr class="text-center">
+                        <th>ID</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr th:each="u : ${usuarios}">
+                            <td class="text-center" th:text="${u.id}"></td>
+                            <td th:text="${u.username}"></td>
+                            <td class="text-center"><span class="badge bg-primary" th:text="${u.rol}"></span></td>
+                            <td class="text-center">
+                                <span th:if="${u.estado}" class="badge bg-success">Activo</span>
+                                <span th:unless="${u.estado}" class="badge bg-danger">Inactivo</span>
+                            </td>
+                            <td class="text-center">
+                                <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-danger btn-sm" th:onclick="|confirmarEliminacion('@{/usuarios/eliminar/{id}(id=${u.id})}')|"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(usuarios)}"><td colspan="5" class="text-center text-muted">No hay usuarios.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

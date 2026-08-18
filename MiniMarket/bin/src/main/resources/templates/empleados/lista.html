@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Empleados')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <div class="d-flex justify-content-between">
+                <h3 class="mb-0"><i class="bi bi-person-workspace"></i> Empleados</h3>
+                <a th:href="@{/empleados/nuevo}" class="btn btn-light"><i class="bi bi-plus-circle"></i> Nuevo</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-dark"><tr class="text-center">
+                        <th>ID</th><th>DNI</th><th>Nombres</th><th>Apellidos</th>
+                        <th>Tipo</th><th>Detalle</th><th>Salario</th><th>Acciones</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr th:each="e : ${empleados}">
+                            <td class="text-center" th:text="${e.id}"></td>
+                            <td th:text="${e.dni}"></td>
+                            <td th:text="${e.nombres}"></td>
+                            <td th:text="${e.apellidos}"></td>
+                            <td class="text-center">
+                                <span th:if="${e instanceof T(edu.pe.cibertec.entity.Cajero)}" class="badge bg-info text-dark">Cajero</span>
+                                <span th:if="${e instanceof T(edu.pe.cibertec.entity.Reponedor)}" class="badge bg-warning text-dark">Reponedor</span>
+                            </td>
+                            <td>
+                                <span th:if="${e instanceof T(edu.pe.cibertec.entity.Cajero)}" th:text="'Turno: ' + ${e.turno}"></span>
+                                <span th:if="${e instanceof T(edu.pe.cibertec.entity.Reponedor)}" th:text="'Área: ' + ${e.area}"></span>
+                            </td>
+                            <td class="text-end" th:text="'S/. ' + ${#numbers.formatDecimal(e.salario,1,'POINT',2,'COMMA')}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/empleados/editar/{id}(id=${e.id})}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-danger btn-sm" th:onclick="|confirmarEliminacion('@{/empleados/eliminar/{id}(id=${e.id})}')|"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(empleados)}"><td colspan="8" class="text-center text-muted">No hay empleados.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

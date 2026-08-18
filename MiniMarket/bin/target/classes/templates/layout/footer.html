@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer class="text-center text-white mt-5 p-3" style="background:#2E7D32;" th:fragment="footer">
+    <strong>MiniMarket</strong> — Sistema de Gestión de Ventas
+    <br>© 2026 - Cibertec
+</footer>
+<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script th:if="${mensaje != null}">
+Swal.fire({ icon: 'success', title: 'Operación Exitosa', text: '[[${mensaje}]]', confirmButtonColor: '#198754' });
+</script>
+<script th:if="${error != null}">
+Swal.fire({ icon: 'error', title: 'Error', text: '[[${error}]]' });
+</script>
+</body>
+</html>

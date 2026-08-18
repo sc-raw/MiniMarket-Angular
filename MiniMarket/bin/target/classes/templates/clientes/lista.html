@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Clientes')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="card shadow">
+        <div class="card-header text-white" style="background:#2E7D32;">
+            <div class="d-flex justify-content-between">
+                <h3 class="mb-0"><i class="bi bi-people-fill"></i> Clientes</h3>
+                <a th:href="@{/clientes/nuevo}" class="btn btn-light"><i class="bi bi-plus-circle"></i> Nuevo</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" th:action="@{/clientes}" class="row mb-3 g-2">
+                <div class="col-md-8">
+                    <input type="text" name="texto" th:value="${texto}" class="form-control" placeholder="Buscar por nombre...">
+                </div>
+                <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-search"></i></button></div>
+                <div class="col-md-2"><a th:href="@{/clientes}" class="btn btn-secondary w-100">Limpiar</a></div>
+            </form>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr class="text-center">
+                            <th>ID</th><th>DNI</th><th>Nombres</th><th>Apellidos</th>
+                            <th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="c : ${clientes}">
+                            <td class="text-center" th:text="${c.id}"></td>
+                            <td th:text="${c.dni}"></td>
+                            <td th:text="${c.nombres}"></td>
+                            <td th:text="${c.apellidos}"></td>
+                            <td th:text="${c.telefono}"></td>
+                            <td th:text="${c.correo}"></td>
+                            <td class="text-center">
+                                <span th:if="${c.estado}" class="badge bg-success">Activo</span>
+                                <span th:unless="${c.estado}" class="badge bg-danger">Inactivo</span>
+                            </td>
+                            <td class="text-center">
+                                <a th:href="@{/clientes/editar/{id}(id=${c.id})}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i></a>
+                                <a href="#" class="btn btn-danger btn-sm" th:onclick="|confirmarEliminacion('@{/clientes/eliminar/{id}(id=${c.id})}')|"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(clientes)}">
+                            <td colspan="8" class="text-center text-muted">No hay clientes registrados.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+<div th:replace="~{layout/scripts :: scripts}"></div>
+</body>
+</html>

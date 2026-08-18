@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout/header :: header('Acceso Denegado')}"></head>
+<body>
+<div th:replace="~{layout/navbar :: navbar}"></div>
+<div class="container mt-5">
+    <div class="card shadow text-center">
+        <div class="card-body p-5">
+            <h1 class="display-1 text-warning"><i class="bi bi-shield-lock-fill"></i></h1>
+            <h1 class="display-4 text-warning">403</h1>
+            <h3>Acceso Denegado</h3>
+            <p class="lead">No tiene permisos para acceder a esta página.</p>
+            <a th:href="@{/}" class="btn btn-success">Volver al Inicio</a>
+        </div>
+    </div>
+</div>
+<div th:replace="~{layout/footer :: footer}"></div>
+</body>
+</html>
