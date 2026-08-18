@@ -8,3 +8,5 @@ Thumbs.db
 *.project
 *.factorypath
 .settings/
+MiniMarket/bin/
+*.class
