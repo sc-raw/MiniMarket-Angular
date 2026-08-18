@@ -2,11 +2,10 @@ import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { CajeroService } from '../../core/services/cajero.service';
 import { ReponedorService } from '../../core/services/reponedor.service';
-import { Cajero, Reponedor } from '../../core/models/models';
+import { Cajero, CajeroUsuarioDTO, Reponedor, ReponedorUsuarioDTO } from '../../core/models/models';
 
 type TipoEmpleado = 'CAJERO' | 'REPONEDOR';
 interface EmpleadoUI extends Cajero, Reponedor {
-  // Unión de campos: turno (cajero) + area (reponedor)
   tipo: TipoEmpleado;
 }
 
@@ -152,7 +151,7 @@ interface EmpleadoUI extends Cajero, Reponedor {
                 <button type="button" class="btn-close btn-close-white" (click)="cerrarFormulario()"></button>
               </div>
               <div class="modal-body">
-                <form (ngSubmit)="guardar()">
+                <form #empForm="ngForm" (ngSubmit)="guardar()">
 
                   <!-- Tipo de empleado (solo al crear) -->
                   @if (!empleadoEditando.id) {
@@ -169,30 +168,60 @@ interface EmpleadoUI extends Cajero, Reponedor {
                   <div class="mb-3">
                     <label class="form-label fw-bold">DNI</label>
                     <input type="text" class="form-control" name="dni"
-                           [(ngModel)]="empleadoEditando.dni" maxlength="8" required>
+                           [(ngModel)]="empleadoEditando.dni" #dni="ngModel"
+                           maxlength="8" required pattern="[0-9]{8}"
+                           [class.is-invalid]="dni.invalid && dni.touched">
+                    @if (dni.invalid && dni.touched) {
+                      <small class="text-danger">Debe tener exactamente 8 dígitos.</small>
+                    }
                   </div>
+
                   <div class="row">
                     <div class="col-md-6 mb-3">
                       <label class="form-label fw-bold">Nombres</label>
                       <input type="text" class="form-control" name="nombres"
-                             [(ngModel)]="empleadoEditando.nombres" required>
+                             [(ngModel)]="empleadoEditando.nombres" #nombres="ngModel"
+                             required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                             [class.is-invalid]="nombres.invalid && nombres.touched">
+                      @if (nombres.invalid && nombres.touched) {
+                        <small class="text-danger">Solo letras y espacios.</small>
+                      }
                     </div>
                     <div class="col-md-6 mb-3">
                       <label class="form-label fw-bold">Apellidos</label>
                       <input type="text" class="form-control" name="apellidos"
-                             [(ngModel)]="empleadoEditando.apellidos" required>
+                             [(ngModel)]="empleadoEditando.apellidos" #apellidos="ngModel"
+                             required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                             [class.is-invalid]="apellidos.invalid && apellidos.touched">
+                      @if (apellidos.invalid && apellidos.touched) {
+                        <small class="text-danger">Solo letras y espacios.</small>
+                      }
                     </div>
                   </div>
-                  <div class="mb-3">
-                    <label class="form-label fw-bold">Teléfono</label>
-                    <input type="text" class="form-control" name="telefono"
-                           [(ngModel)]="empleadoEditando.telefono">
+
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label fw-bold">Teléfono</label>
+                      <input type="text" class="form-control" name="telefono"
+                             [(ngModel)]="empleadoEditando.telefono" #tel="ngModel"
+                             required pattern="[0-9]{7,9}"
+                             [class.is-invalid]="tel.invalid && tel.touched">
+                      @if (tel.invalid && tel.touched) {
+                        <small class="text-danger">Solo números (7-9).</small>
+                      }
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label fw-bold">Correo</label>
+                      <input type="email" class="form-control" name="correo"
+                             [(ngModel)]="empleadoEditando.correo" #correo="ngModel"
+                             required pattern="^[a-zA-Z0-9._%+-]+@gmail\\.com$"
+                             [class.is-invalid]="correo.invalid && correo.touched">
+                      @if (correo.invalid && correo.touched) {
+                        <small class="text-danger">Debe ser &#64;gmail.com</small>
+                      }
+                    </div>
                   </div>
-                  <div class="mb-3">
-                    <label class="form-label fw-bold">Correo</label>
-                    <input type="email" class="form-control" name="correo"
-                           [(ngModel)]="empleadoEditando.correo">
-                  </div>
+
                   <div class="mb-3">
                     <label class="form-label fw-bold">Dirección</label>
                     <input type="text" class="form-control" name="direccion"
@@ -236,9 +265,37 @@ interface EmpleadoUI extends Cajero, Reponedor {
                     </div>
                   </div>
 
+                  <!-- CAMPOS DE USUARIO (Solo al crear nuevo) -->
+                  @if (!empleadoEditando.id) {
+                    <hr>
+                    <h6 class="fw-bold text-success">Datos de acceso al sistema</h6>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Usuario</label>
+                        <input type="text" class="form-control" name="username"
+                               [(ngModel)]="username" #user="ngModel"
+                               required pattern="[a-zA-Z0-9_]{4,20}"
+                               [class.is-invalid]="user.invalid && user.touched">
+                        @if (user.invalid && user.touched) {
+                          <small class="text-danger">Letras, números o guion bajo (4-20).</small>
+                        }
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Contraseña</label>
+                        <input type="password" class="form-control" name="password"
+                               [(ngModel)]="password" #pass="ngModel"
+                               required minlength="4"
+                               [class.is-invalid]="pass.invalid && pass.touched">
+                        @if (pass.invalid && pass.touched) {
+                          <small class="text-danger">Mínimo 4 caracteres.</small>
+                        }
+                      </div>
+                    </div>
+                  }
+
                   <div class="text-end">
                     <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
-                    <button type="submit" class="btn btn-success" [disabled]="guardando()">
+                    <button type="submit" class="btn btn-success" [disabled]="empForm.invalid || guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
                       } @else {
@@ -272,6 +329,10 @@ export class EmpleadosComponent implements OnInit {
   textoBusqueda = signal('');
 
   empleadoEditando: EmpleadoUI = this.empleadoVacio();
+  
+  // Variables para las credenciales
+  username: string = '';
+  password: string = '';
 
   ngOnInit(): void {
     this.cargar();
@@ -322,12 +383,14 @@ export class EmpleadosComponent implements OnInit {
     return {
       dni: '', nombres: '', apellidos: '', telefono: '', correo: '',
       direccion: '', salario: 0, turno: '', area: '', estado: true,
-      tipo: 'CAJERO'
+      tipo: 'CAJERO', fechaIngreso: new Date().toISOString().split('T')[0]
     };
   }
 
   abrirFormulario(): void {
     this.empleadoEditando = this.empleadoVacio();
+    this.username = '';
+    this.password = '';
     this.mostrarFormulario.set(true);
   }
 
@@ -347,21 +410,6 @@ export class EmpleadosComponent implements OnInit {
   }
 
   guardar(): void {
-    if (!this.empleadoEditando.dni?.trim() ||
-        !this.empleadoEditando.nombres?.trim() ||
-        !this.empleadoEditando.apellidos?.trim()) {
-      this.error.set('DNI, nombres y apellidos son obligatorios.');
-      return;
-    }
-    if (this.empleadoEditando.tipo === 'CAJERO' && !this.empleadoEditando.turno?.trim()) {
-      this.error.set('El turno es obligatorio para cajeros.');
-      return;
-    }
-    if (this.empleadoEditando.tipo === 'REPONEDOR' && !this.empleadoEditando.area?.trim()) {
-      this.error.set('El área es obligatoria para reponedores.');
-      return;
-    }
-
     this.guardando.set(true);
     this.error.set('');
 
@@ -376,12 +424,30 @@ export class EmpleadosComponent implements OnInit {
         direccion: this.empleadoEditando.direccion,
         salario: this.empleadoEditando.salario,
         turno: this.empleadoEditando.turno,
-        estado: this.empleadoEditando.estado
+        estado: this.empleadoEditando.estado,
+        fechaIngreso: this.empleadoEditando.fechaIngreso || new Date().toISOString().split('T')[0]
       };
-      this.cajeroService.guardar(cajero).subscribe({
-        next: () => this.onGuardadoExitoso(),
-        error: (err) => this.onGuardadoError(err)
-      });
+
+      // SI ES NUEVO (USA DTO)
+      if (!cajero.id) {
+        const dto: CajeroUsuarioDTO = {
+          cajero: cajero,
+          username: this.username,
+          password: this.password
+        };
+        this.cajeroService.crearConUsuario(dto).subscribe({
+          next: () => this.onGuardadoExitoso(),
+          error: (err) => this.onGuardadoError(err)
+        });
+      } 
+      // SI ES EDICIÓN (USA MÉTODO NORMAL)
+      else {
+        this.cajeroService.guardar(cajero).subscribe({
+          next: () => this.onGuardadoExitoso(),
+          error: (err) => this.onGuardadoError(err)
+        });
+      }
+
     } else {
       const reponedor: Reponedor = {
         id: this.empleadoEditando.id,
@@ -393,12 +459,28 @@ export class EmpleadosComponent implements OnInit {
         direccion: this.empleadoEditando.direccion,
         salario: this.empleadoEditando.salario,
         area: this.empleadoEditando.area,
-        estado: this.empleadoEditando.estado
+        estado: this.empleadoEditando.estado,
+        fechaIngreso: this.empleadoEditando.fechaIngreso || new Date().toISOString().split('T')[0]
       };
-      this.reponedorService.guardar(reponedor).subscribe({
-        next: () => this.onGuardadoExitoso(),
-        error: (err) => this.onGuardadoError(err)
-      });
+      // SI ES NUEVO (USA DTO)
+      if (!reponedor.id) {
+        const dto: ReponedorUsuarioDTO = {
+          reponedor: reponedor,
+          username: this.username,
+          password: this.password
+        };
+        this.reponedorService.crearConUsuario(dto).subscribe({
+          next: () => this.onGuardadoExitoso(),
+          error: (err) => this.onGuardadoError(err)
+        });
+      } 
+      // SI ES EDICIÓN (USA MÉTODO NORMAL)
+      else {
+        this.reponedorService.guardar(reponedor).subscribe({
+          next: () => this.onGuardadoExitoso(),
+          error: (err) => this.onGuardadoError(err)
+        });
+      }
     }
   }
 
@@ -407,7 +489,7 @@ export class EmpleadosComponent implements OnInit {
     this.cerrarFormulario();
     this.mensaje.set(this.empleadoEditando.id
       ? 'Empleado actualizado correctamente.'
-      : 'Empleado creado correctamente.');
+      : 'Empleado y usuario creados con éxito.');
     this.cargar();
   }
 

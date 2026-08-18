@@ -46,8 +46,20 @@ export interface Cajero extends Empleado {
   turno: string;
 }
 
+export interface CajeroUsuarioDTO {
+  cajero: Cajero;
+  username: string;
+  password: string;
+}
+
 export interface Reponedor extends Empleado {
   area: string;
+}
+
+export interface ReponedorUsuarioDTO {
+  reponedor: Reponedor;
+  username: string;
+  password: string;
 }
 
 export interface DetalleVenta {

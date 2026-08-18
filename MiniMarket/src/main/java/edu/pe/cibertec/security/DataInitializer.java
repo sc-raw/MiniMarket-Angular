@@ -7,22 +7,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import edu.pe.cibertec.entity.Cajero;
 import edu.pe.cibertec.entity.Categoria;
 import edu.pe.cibertec.entity.Producto;
+import edu.pe.cibertec.entity.Reponedor;
 import edu.pe.cibertec.entity.Usuario;
+import edu.pe.cibertec.repository.CajeroRepository;
 import edu.pe.cibertec.repository.CategoriaRepository;
 import edu.pe.cibertec.repository.ProductoRepository;
+import edu.pe.cibertec.repository.ReponedorRepository;
 import edu.pe.cibertec.repository.UsuarioRepository;
 
-/**
- * Inicializador de datos.
- *
- * Se ejecuta UNA sola vez al arrancar la aplicación, solo si no hay usuarios.
- * Crea:
- *   - 3 usuarios (admin, cajero, reponedor)
- *   - 5 categorías
- *   - 12 productos (algunos con fecha de vencimiento: vencidos y próximos a vencer)
- */
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -30,38 +25,91 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final CategoriaRepository categoriaRepository;
     private final ProductoRepository productoRepository;
+    private final CajeroRepository cajeroRepository;
+    private final ReponedorRepository reponedorRepository;
 
     public DataInitializer(UsuarioRepository usuarioRepository,
                            PasswordEncoder passwordEncoder,
                            CategoriaRepository categoriaRepository,
-                           ProductoRepository productoRepository) {
+                           ProductoRepository productoRepository,
+                           CajeroRepository cajeroRepository,
+                           ReponedorRepository reponedorRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.categoriaRepository = categoriaRepository;
         this.productoRepository = productoRepository;
+        this.cajeroRepository = cajeroRepository;
+        this.reponedorRepository = reponedorRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        if (usuarioRepository.count() > 0) {
-            return;
+        
+        // 1. Si no hay usuarios, crea los usuarios y empleados base
+        if (usuarioRepository.count() == 0) {
+            crearUsuariosYEmpleados();
         }
 
-        crearUsuarios();
-        crearCategoriasYProductos();
+        // 2. Si no hay categorías, crea las categorías y productos base
+        if (categoriaRepository.count() == 0) {
+            crearCategoriasYProductos();
+        }
 
-        System.out.println(">>> Datos de ejemplo creados correctamente.");
+        System.out.println(">>> Verificación de base de datos completada.");
     }
 
-    private void crearUsuarios() {
+    private void crearUsuariosYEmpleados() {
         crearUsuario("admin", "admin123", "ADMIN");
+        
+        Cajero c1 = new Cajero();
+        c1.setDni("12345678");
+        c1.setNombres("Juan Carlos");
+        c1.setApellidos("Perez Garcia");
+        c1.setTelefono("987654321");
+        c1.setCorreo("juan.perez&#64;gmail.com");
+        c1.setDireccion("Av. Lima 123");
+        c1.setEstado(true);
+        c1.setFechaIngreso(LocalDate.now());
+        c1.setSalario(new BigDecimal("1500.00"));
+        c1.setTurno("MAÑANA");
+        cajeroRepository.save(c1);
         crearUsuario("cajero", "cajero123", "CAJERO");
+
+        Cajero c2 = new Cajero();
+        c2.setDni("87654321");
+        c2.setNombres("Maria Fernanda");
+        c2.setApellidos("Lopez Diaz");
+        c2.setTelefono("987123456");
+        c2.setCorreo("maria.lopez&#64;gmail.com");
+        c2.setDireccion("Jr. Cusco 456");
+        c2.setEstado(true);
+        c2.setFechaIngreso(LocalDate.now());
+        c2.setSalario(new BigDecimal("1500.00"));
+        c2.setTurno("TARDE");
+        cajeroRepository.save(c2);
+        crearUsuario("cajero2", "cajero456", "CAJERO");
+
+        Reponedor r1 = new Reponedor();
+        r1.setDni("11223344");
+        r1.setNombres("Pedro Luis");
+        r1.setApellidos("Suarez Gomez");
+        r1.setTelefono("965432198");
+        r1.setCorreo("pedro.suarez&#64;gmail.com");
+        r1.setDireccion("Av. Brasil 789");
+        r1.setEstado(true);
+        r1.setFechaIngreso(LocalDate.now());
+        r1.setSalario(new BigDecimal("1200.00"));
+        r1.setArea("ALMACEN");
+        reponedorRepository.save(r1);
         crearUsuario("reponedor", "reponedor123", "REPONEDOR");
+
         crearUsuario("atencion1", "atencion123", "ATENCION_CLIENTE");
         crearUsuario("atencion2", "atencion456", "ATENCION_CLIENTE");
+
         System.out.println(">>>     admin / admin123           (ADMIN)");
-        System.out.println(">>>     cajero / cajero123          (CAJERO)");
-        System.out.println(">>>     reponedor / reponedor123    (REPONEDOR)");
+        System.out.println(">>>     cajero / cajero123         (CAJERO - Juan Carlos)");
+        System.out.println(">>>     cajero2 / cajero456        (CAJERO - Maria Fernanda)");
+        System.out.println(">>>     reponedor / reponedor123   (REPONEDOR - Pedro Luis)");
         System.out.println(">>>     atencion1 / atencion123    (ATENCION_CLIENTE)");
         System.out.println(">>>     atencion2 / atencion456    (ATENCION_CLIENTE)");
     }
@@ -78,43 +126,36 @@ public class DataInitializer implements CommandLineRunner {
     private void crearCategoriasYProductos() {
         LocalDate hoy = LocalDate.now();
 
-        // Categorías
         Categoria lacteos = new Categoria(); lacteos.setNombre("Lácteos"); categoriaRepository.save(lacteos);
         Categoria bebidas = new Categoria(); bebidas.setNombre("Bebidas"); categoriaRepository.save(bebidas);
         Categoria abarrotes = new Categoria(); abarrotes.setNombre("Abarrotes"); categoriaRepository.save(abarrotes);
         Categoria limpieza = new Categoria(); limpieza.setNombre("Limpieza"); categoriaRepository.save(limpieza);
         Categoria snacks = new Categoria(); snacks.setNombre("Snacks"); categoriaRepository.save(snacks);
 
-        // Productos con fechas de vencimiento variadas:
-        //   null      = no perecedero (no aparece en reportes de vencimiento)
-        //   pasada    = VENCIDO (rojo en reportes)
-        //   <=7 días  = PRÓXIMO A VENCER (amarillo en reportes)
-        //   >7 días   = OK (no aparece en reportes)
-
         crearProducto("P001", "Leche Gloria 1L", "Leche entera pasteurizada",
-                new BigDecimal("4.50"), 50, lacteos, hoy.plusDays(3));    // próximo a vencer
+                new BigDecimal("4.50"), 50, lacteos, hoy.plusDays(3));    
         crearProducto("P002", "Queso Andino 500g", "Queso fresco",
-                new BigDecimal("18.00"), 20, lacteos, hoy.plusDays(20));  // OK
+                new BigDecimal("18.00"), 20, lacteos, hoy.plusDays(20));  
         crearProducto("P003", "Yogurt Laive 1L", "Yogurt de fresa",
-                new BigDecimal("8.50"), 30, lacteos, hoy.minusDays(2));  // VENCIDO
+                new BigDecimal("8.50"), 30, lacteos, hoy.minusDays(2));  
         crearProducto("P004", "Coca Cola 1.5L", "Gaseosa",
-                new BigDecimal("7.00"), 40, bebidas, null);               // no perecedero
+                new BigDecimal("7.00"), 40, bebidas, null);               
         crearProducto("P005", "Agua Ciel 1L", "Agua sin gas",
                 new BigDecimal("2.50"), 60, bebidas, null);
         crearProducto("P006", "Jugo Don Vitor 1L", "Jugo de naranja",
-                new BigDecimal("9.00"), 25, bebidas, hoy.plusDays(5));   // próximo a vencer
+                new BigDecimal("9.00"), 25, bebidas, hoy.plusDays(5));   
         crearProducto("P007", "Arroz Costeño 5kg", "Arroz blanco",
                 new BigDecimal("25.00"), 35, abarrotes, null);
         crearProducto("P008", "Azúcar Rubia 1kg", "Azúcar integral",
                 new BigDecimal("5.50"), 45, abarrotes, null);
         crearProducto("P009", "Aceite Primor 1L", "Aceite vegetal",
-                new BigDecimal("12.00"), 3, abarrotes, hoy.minusDays(5)); // VENCIDO + stock bajo
+                new BigDecimal("12.00"), 3, abarrotes, hoy.minusDays(5)); 
         crearProducto("P010", "Detergente Bolívar 1kg", "Ropa sucia",
                 new BigDecimal("11.50"), 28, limpieza, null);
         crearProducto("P011", "Papel Higiénico Elite 4x", "Doble hoja",
-                new BigDecimal("8.00"), 4, limpieza, null);               // stock bajo
+                new BigDecimal("8.00"), 4, limpieza, null);               
         crearProducto("P012", "Papas Fritas Lay's 150g", "Clásicas",
-                new BigDecimal("6.50"), 50, snacks, hoy.plusDays(45));   // OK
+                new BigDecimal("6.50"), 50, snacks, hoy.plusDays(45));   
     }
 
     private void crearProducto(String codigo, String nombre, String descripcion,

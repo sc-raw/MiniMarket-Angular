@@ -137,32 +137,84 @@ import { Cliente } from '../../core/models/models';
                 <button type="button" class="btn-close btn-close-white" (click)="cerrarFormulario()"></button>
               </div>
               <div class="modal-body">
-                <form (ngSubmit)="guardar()">
+                <!-- FORMULARIO CON VALIDACIONES -->
+                <form #clienteForm="ngForm" (ngSubmit)="guardar()">
+                  
+                  <!-- DNI -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">DNI</label>
                     <input type="text" class="form-control" name="dni"
-                           [(ngModel)]="clienteEditando.dni" maxlength="8" required>
+                           [(ngModel)]="clienteEditando.dni" #dni="ngModel"
+                           maxlength="8" required pattern="[0-9]{8}"
+                           [class.is-invalid]="dni.invalid && dni.touched">
+                    @if (dni.invalid && dni.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (dni.errors?.['required']) { <small>DNI es obligatorio.</small><br> }
+                        @if (dni.errors?.['pattern']) { <small>Debe tener exactamente 8 dígitos numéricos.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- NOMBRES -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Nombres</label>
                     <input type="text" class="form-control" name="nombres"
-                           [(ngModel)]="clienteEditando.nombres" required>
+                           [(ngModel)]="clienteEditando.nombres" #nombres="ngModel"
+                           required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                           [class.is-invalid]="nombres.invalid && nombres.touched">
+                    @if (nombres.invalid && nombres.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (nombres.errors?.['required']) { <small>El nombre es obligatorio.</small><br> }
+                        @if (nombres.errors?.['pattern']) { <small>Solo se permiten letras y espacios.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- APELLIDOS -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Apellidos</label>
                     <input type="text" class="form-control" name="apellidos"
-                           [(ngModel)]="clienteEditando.apellidos" required>
+                           [(ngModel)]="clienteEditando.apellidos" #apellidos="ngModel"
+                           required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                           [class.is-invalid]="apellidos.invalid && apellidos.touched">
+                    @if (apellidos.invalid && apellidos.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (apellidos.errors?.['required']) { <small>El apellido es obligatorio.</small><br> }
+                        @if (apellidos.errors?.['pattern']) { <small>Solo se permiten letras y espacios.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- TELÉFONO -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Teléfono</label>
                     <input type="text" class="form-control" name="telefono"
-                           [(ngModel)]="clienteEditando.telefono">
+                           [(ngModel)]="clienteEditando.telefono" #telefono="ngModel"
+                           required pattern="[0-9]{7,9}"
+                           [class.is-invalid]="telefono.invalid && telefono.touched">
+                    @if (telefono.invalid && telefono.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (telefono.errors?.['required']) { <small>El teléfono es obligatorio.</small><br> }
+                        @if (telefono.errors?.['pattern']) { <small>Solo números (7 a 9 dígitos).</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- CORREO -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Correo</label>
                     <input type="email" class="form-control" name="correo"
-                           [(ngModel)]="clienteEditando.correo">
+                           [(ngModel)]="clienteEditando.correo" #correo="ngModel"
+                           required pattern="^[a-zA-Z0-9._%+-]+@gmail\\.com$"
+                           [class.is-invalid]="correo.invalid && correo.touched">
+                    @if (correo.invalid && correo.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (correo.errors?.['required']) { <small>El correo es obligatorio.</small><br> }
+                        @if (correo.errors?.['pattern']) { <small>Debe ser un correo válido de &#64;gmail.com.</small> }
+                      </div>
+                    }
                   </div>
+
                   <div class="mb-3">
                     <label class="form-label fw-bold">Dirección</label>
                     <input type="text" class="form-control" name="direccion"
@@ -175,11 +227,12 @@ import { Cliente } from '../../core/models/models';
                       <option [ngValue]="false">Inactivo</option>
                     </select>
                   </div>
+                  
                   <div class="text-end">
                     <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
                       Cancelar
                     </button>
-                    <button type="submit" class="btn btn-success" [disabled]="guardando()">
+                    <button type="submit" class="btn btn-success" [disabled]="clienteForm.invalid || guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
                       } @else {

@@ -5,10 +5,16 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import edu.pe.cibertec.dto.CajeroUsuarioDTO;
 import edu.pe.cibertec.entity.Cajero;
 import edu.pe.cibertec.entity.Empleado;
+import edu.pe.cibertec.entity.Usuario;
+import edu.pe.cibertec.repository.CajeroRepository;
+import edu.pe.cibertec.repository.UsuarioRepository;
 import edu.pe.cibertec.service.EmpleadoService;
 
 @RestController
@@ -18,11 +24,45 @@ public class CajerosRestController {
     @Autowired
     private EmpleadoService empleadoService;
 
+    // Nuevas dependencias para el endpoint crear-con-usuario
+    @Autowired
+    private CajeroRepository cajeroRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // ---------- ENDPOINT NUEVO ----------
+    @PostMapping("/crear-con-usuario")
+    @Transactional
+    public ResponseEntity<?> crearCajeroConUsuario(@RequestBody CajeroUsuarioDTO dto) {
+        try {
+            // 1. Guardamos el cajero
+            Cajero nuevoCajero = dto.getCajero();
+            cajeroRepository.save(nuevoCajero);
+
+            // 2. Creamos y guardamos el usuario vinculado
+            Usuario u = new Usuario();
+            u.setUsername(dto.getUsername());
+            u.setPassword(passwordEncoder.encode(dto.getPassword()));
+            u.setRol("CAJERO");
+            u.setEstado(true);
+            usuarioRepository.save(u);
+
+            return ResponseEntity.ok("Cajero y Usuario creados con éxito");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al crear: " + e.getMessage());
+        }
+    }
+
+    // ---------- MÉTODOS EXISTENTES ----------
     @GetMapping
     public List<Cajero> listar() {
         return empleadoService.listarCajerosActivos();
     }
-    
+
     @GetMapping("/todos")
     public List<Cajero> listarTodos() {
         return empleadoService.listarTodosCajeros();

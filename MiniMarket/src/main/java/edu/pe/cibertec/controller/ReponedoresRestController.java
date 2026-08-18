@@ -5,10 +5,16 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import edu.pe.cibertec.dto.ReponedorUsuarioDTO;
 import edu.pe.cibertec.entity.Empleado;
 import edu.pe.cibertec.entity.Reponedor;
+import edu.pe.cibertec.entity.Usuario;
+import edu.pe.cibertec.repository.ReponedorRepository;
+import edu.pe.cibertec.repository.UsuarioRepository;
 import edu.pe.cibertec.service.EmpleadoService;
 
 /**
@@ -21,6 +27,38 @@ public class ReponedoresRestController {
 
     @Autowired
     private EmpleadoService empleadoService;
+
+    @Autowired
+    private ReponedorRepository reponedorRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // ---------- ENDPOINT NUEVO ----------
+    @PostMapping("/crear-con-usuario")
+    @Transactional
+    public ResponseEntity<?> crearReponedorConUsuario(@RequestBody ReponedorUsuarioDTO dto) {
+        try {
+            // 1. Guardamos el reponedor
+            Reponedor nuevoReponedor = dto.getReponedor();
+            reponedorRepository.save(nuevoReponedor);
+
+            // 2. Creamos y guardamos el usuario
+            Usuario u = new Usuario();
+            u.setUsername(dto.getUsername());
+            u.setPassword(passwordEncoder.encode(dto.getPassword()));
+            u.setRol("REPONEDOR");
+            u.setEstado(true);
+            usuarioRepository.save(u);
+
+            return ResponseEntity.ok("Reponedor y Usuario creados con éxito");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al crear: " + e.getMessage());
+        }
+    }
 
     @GetMapping
     public List<Reponedor> listar() {

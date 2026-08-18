@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CajeroService } from '../../core/services/cajero.service';
-import { Cajero } from '../../core/models/models';
+import { Cajero, CajeroUsuarioDTO } from '../../core/models/models';
 
 @Component({
   selector: 'app-cajeros',
@@ -139,37 +139,124 @@ import { Cajero } from '../../core/models/models';
                 <button type="button" class="btn-close btn-close-white" (click)="cerrarFormulario()"></button>
               </div>
               <div class="modal-body">
-                <form (ngSubmit)="guardar()">
+                <form #cajeroForm="ngForm" (ngSubmit)="guardar()">
+
+                  <!-- DNI -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">DNI</label>
                     <input type="text" class="form-control" name="dni"
-                           [(ngModel)]="cajeroEditando.dni" maxlength="8" required>
+                           [(ngModel)]="cajeroEditando.dni" #dni="ngModel"
+                           maxlength="8" required pattern="[0-9]{8}"
+                           [class.is-invalid]="dni.invalid && dni.touched">
+                    @if (dni.invalid && dni.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (dni.errors?.['required']) { <small>DNI es obligatorio.</small><br> }
+                        @if (dni.errors?.['pattern']) { <small>Debe tener exactamente 8 dígitos numéricos.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- NOMBRES -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Nombres</label>
                     <input type="text" class="form-control" name="nombres"
-                           [(ngModel)]="cajeroEditando.nombres" required>
+                           [(ngModel)]="cajeroEditando.nombres" #nombres="ngModel"
+                           required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                           [class.is-invalid]="nombres.invalid && nombres.touched">
+                    @if (nombres.invalid && nombres.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (nombres.errors?.['required']) { <small>El nombre es obligatorio.</small><br> }
+                        @if (nombres.errors?.['pattern']) { <small>Solo se permiten letras y espacios.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- APELLIDOS -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Apellidos</label>
                     <input type="text" class="form-control" name="apellidos"
-                           [(ngModel)]="cajeroEditando.apellidos" required>
+                           [(ngModel)]="cajeroEditando.apellidos" #apellidos="ngModel"
+                           required pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                           [class.is-invalid]="apellidos.invalid && apellidos.touched">
+                    @if (apellidos.invalid && apellidos.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (apellidos.errors?.['required']) { <small>El apellido es obligatorio.</small><br> }
+                        @if (apellidos.errors?.['pattern']) { <small>Solo se permiten letras y espacios.</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- TELÉFONO -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Teléfono</label>
                     <input type="text" class="form-control" name="telefono"
-                           [(ngModel)]="cajeroEditando.telefono">
+                           [(ngModel)]="cajeroEditando.telefono" #telefono="ngModel"
+                           pattern="[0-9]{7,9}"
+                           [class.is-invalid]="telefono.invalid && telefono.touched">
+                    @if (telefono.invalid && telefono.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (telefono.errors?.['pattern']) { <small>Solo números (7 a 9 dígitos).</small> }
+                      </div>
+                    }
                   </div>
+
+                  <!-- CORREO -->
                   <div class="mb-3">
                     <label class="form-label fw-bold">Correo</label>
                     <input type="email" class="form-control" name="correo"
-                           [(ngModel)]="cajeroEditando.correo">
+                           [(ngModel)]="cajeroEditando.correo" #correo="ngModel"
+                           required pattern="^[a-zA-Z0-9._%+-]+@gmail\\.com$"
+                           [class.is-invalid]="correo.invalid && correo.touched">
+                    @if (correo.invalid && correo.touched) {
+                      <div class="text-danger small mt-1">
+                        @if (correo.errors?.['required']) { <small>El correo es obligatorio.</small><br> }
+                        @if (correo.errors?.['pattern']) { <small>Debe ser un correo válido de &#64;gmail.com.</small> }
+                      </div>
+                    }
                   </div>
+
                   <div class="mb-3">
                     <label class="form-label fw-bold">Dirección</label>
                     <input type="text" class="form-control" name="direccion"
                            [(ngModel)]="cajeroEditando.direccion">
                   </div>
+
+                  <!-- Campos de USUARIO solo al crear nuevo -->
+                  @if (!cajeroEditando.id) {
+                    <hr>
+                    <h6 class="fw-bold text-success">Datos de acceso</h6>
+
+                    <!-- USERNAME -->
+                    <div class="mb-3">
+                      <label class="form-label fw-bold">Usuario</label>
+                      <input type="text" class="form-control" name="username"
+                             [(ngModel)]="username" #usuario="ngModel"
+                             required pattern="[a-zA-Z0-9_]{4,20}"
+                             [class.is-invalid]="usuario.invalid && usuario.touched">
+                      @if (usuario.invalid && usuario.touched) {
+                        <div class="text-danger small mt-1">
+                          @if (usuario.errors?.['required']) { <small>El usuario es obligatorio.</small><br> }
+                          @if (usuario.errors?.['pattern']) { <small>Solo letras, números o guión bajo (4 a 20).</small> }
+                        </div>
+                      }
+                    </div>
+
+                    <!-- PASSWORD -->
+                    <div class="mb-3">
+                      <label class="form-label fw-bold">Contraseña</label>
+                      <input type="password" class="form-control" name="password"
+                             [(ngModel)]="password" #pass="ngModel"
+                             required minlength="6"
+                             [class.is-invalid]="pass.invalid && pass.touched">
+                      @if (pass.invalid && pass.touched) {
+                        <div class="text-danger small mt-1">
+                          @if (pass.errors?.['required']) { <small>La contraseña es obligatoria.</small><br> }
+                          @if (pass.errors?.['minlength']) { <small>Mínimo 6 caracteres.</small> }
+                        </div>
+                      }
+                    </div>
+                  }
+
                   <div class="row">
                     <div class="col-md-6 mb-3">
                       <label class="form-label fw-bold">Turno</label>
@@ -197,7 +284,7 @@ import { Cajero } from '../../core/models/models';
                     <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
                       Cancelar
                     </button>
-                    <button type="submit" class="btn btn-success" [disabled]="guardando()">
+                    <button type="submit" class="btn btn-success" [disabled]="cajeroForm.invalid || guardando()">
                       @if (guardando()) {
                         <span class="spinner-border spinner-border-sm"></span> Guardando...
                       } @else {
@@ -229,6 +316,9 @@ export class CajerosComponent implements OnInit {
   textoBusqueda = signal('');
 
   cajeroEditando: Cajero = this.cajeroVacio();
+
+  username: string = '';
+  password: string = '';
 
   ngOnInit(): void {
     this.cargar();
@@ -289,14 +379,17 @@ export class CajerosComponent implements OnInit {
       telefono: '',
       correo: '',
       direccion: '',
+      estado: true,
+      fechaIngreso: new Date().toISOString().split('T')[0],
       salario: 0,
-      turno: '',
-      estado: true
+      turno: 'MAÑANA'
     };
   }
 
   abrirFormulario(): void {
     this.cajeroEditando = this.cajeroVacio();
+    this.username = '';
+    this.password = '';
     this.mostrarFormulario.set(true);
   }
 
@@ -321,15 +414,39 @@ export class CajerosComponent implements OnInit {
     this.guardando.set(true);
     this.error.set('');
 
+    // Si es nuevo, usar el DTO con usuario
+    if (!this.cajeroEditando.id) {
+      const dto: CajeroUsuarioDTO = {
+        cajero: this.cajeroEditando,
+        username: this.username,
+        password: this.password
+      };
+
+      this.cajeroService.crearConUsuario(dto).subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.cerrarFormulario();
+          this.mensaje.set('Cajero y usuario creados con éxito.');
+          this.cargar();
+        },
+        error: (err) => {
+          this.guardando.set(false);
+          console.error(err);
+          this.error.set(
+            typeof err?.error === 'string'
+              ? err.error
+              : 'Error al crear. Verifica que el usuario no exista ya.'
+          );
+        }
+      });
+      return;
+    }
+
     this.cajeroService.guardar(this.cajeroEditando).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarFormulario();
-        this.mensaje.set(
-          this.cajeroEditando.id
-            ? 'Cajero actualizado correctamente.'
-            : 'Cajero creado correctamente.'
-        );
+        this.mensaje.set('Cajero actualizado correctamente.');
         this.cargar();
       },
       error: (err) => {

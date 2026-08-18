@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { Reponedor } from '../models/models';
+import { Reponedor, ReponedorUsuarioDTO } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ReponedorService {
@@ -23,6 +23,10 @@ export class ReponedorService {
       );
     }
     return this.http.post<Reponedor>(this.baseUrl, reponedor);
+  }
+
+  crearConUsuario(dto: ReponedorUsuarioDTO): Observable<any> {
+    return this.http.post(`${this.baseUrl}/crear-con-usuario`, dto);
   }
 
   eliminar(id: number): Observable<void> {

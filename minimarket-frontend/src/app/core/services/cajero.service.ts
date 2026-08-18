@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { Cajero } from '../models/models';
+import { Cajero, CajeroUsuarioDTO } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class CajeroService {
@@ -23,6 +23,10 @@ export class CajeroService {
       );
     }
     return this.http.post<Cajero>(this.baseUrl, cajero);
+  }
+
+  crearConUsuario(dto: CajeroUsuarioDTO): Observable<any> {
+    return this.http.post(`${this.baseUrl}/crear-con-usuario`, dto);
   }
 
   eliminar(id: number): Observable<void> {
