@@ -67,6 +67,7 @@ interface LineaDetalle {
                     <td class="text-end fw-bold">S/. {{ v.total }}</td>
                     <td class="text-center">
                       @switch (v.estado) {
+                        @case ('FINALIZADA') { <span class="badge bg-success">✅ Finalizada</span> }
                         @case ('COMPLETADO') { <span class="badge bg-success">✅ Completado</span> }
                         @case ('CANCELADA') { <span class="badge bg-danger">❌ Cancelada</span> }
                         @default { <span class="badge bg-secondary">{{ v.estado }}</span> }
@@ -74,9 +75,14 @@ interface LineaDetalle {
                     </td>
 
                     <td class="text-center">
-      @if (v.estado === 'COMPLETADO' || v.estado === 'PENDIENTE') {
-        <button class="btn btn-sm btn-danger" (click)="anularVenta(v.id!)" title="Anular">
+      @if (v.estado === 'FINALIZADA' || v.estado === 'COMPLETADO' || v.estado === 'PENDIENTE') {
+        <button class="btn btn-sm btn-danger me-1" (click)="anularVenta(v.id!)" title="Anular">
           <i class="bi bi-x-circle"></i> Anular
+        </button>
+      }
+      @if (v.estado === 'FINALIZADA' || v.estado === 'COMPLETADO') {
+        <button class="btn btn-sm btn-outline-success" (click)="imprimirBoleta(v)" title="Imprimir boleta">
+          <i class="bi bi-printer"></i> Boleta
         </button>
       }
       @if (v.estado === 'CANCELADA') {
@@ -574,6 +580,56 @@ export class VentasComponent implements OnInit {
     });
   }
 
+
+  // ========== IMPRIMIR BOLETA / TICKET ==========
+  imprimirBoleta(venta: any): void {
+    const ventana = window.open('', '_blank', 'width=400,height=600');
+    if (!ventana) return;
+
+    ventana.document.write(`
+      <html>
+        <head>
+          <title>Boleta #${venta.id}</title>
+          <style>
+            body { font-family: monospace; font-size: 12px; margin: 20px; }
+            h2 { text-align: center; margin: 0; }
+            hr { border: 1px dashed #000; }
+            .total { font-weight: bold; font-size: 16px; }
+            table { width: 100%; border-collapse: collapse; }
+            td { padding: 2px 0; }
+          </style>
+        </head>
+        <body>
+          <h2>MiniMarket</h2>
+          <p style="text-align:center;">RUC: 12345678901</p>
+          <hr>
+          <p>Boleta: #${venta.id}</p>
+          <p>Fecha: ${new Date(venta.fechaRegistro).toLocaleString()}</p>
+          <p>Cliente: ${venta.cliente?.nombres} ${venta.cliente?.apellidos}</p>
+          <p>Cajero: ${venta.cajero?.nombres} ${venta.cajero?.apellidos}</p>
+          <hr>
+          <table>
+            <tr><td><strong>Cant.</strong></td><td><strong>Producto</strong></td><td style="text-align:right;"><strong>Subtotal</strong></td></tr>
+            ${(venta.detalles || []).map((d: any) => `
+              <tr>
+                <td>${d.cantidad}</td>
+                <td>${d.producto?.nombre || ''}</td>
+                <td style="text-align:right;">S/. ${d.subtotal}</td>
+              </tr>
+            `).join('')}
+          </table>
+          <hr>
+          <p class="total" style="text-align:right;">TOTAL: S/. ${venta.total}</p>
+          <hr>
+          <p style="text-align:center;">¡Gracias por su compra!</p>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    ventana.document.close();
+  }
 
   // ========== ANULAR VENTA ==========
   anularVenta(id: number): void {

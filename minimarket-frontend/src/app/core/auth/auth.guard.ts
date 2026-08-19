@@ -3,10 +3,18 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 // Guard que protege rutas: solo deja pasar si hay sesión activa
+// y el usuario NO es cliente (los clientes solo usan tienda / mis-pedidos)
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.estaAutenticado()) return true;
+  if (auth.estaAutenticado()) {
+    // Si es cliente e intenta entrar al dashboard, lo mandamos a la tienda
+    if (auth.esCliente()) {
+      router.navigate(['/tienda']);
+      return false;
+    }
+    return true; // Si es admin/cajero, deja entrar
+  }
   router.navigate(['/login']);
   return false;
 };

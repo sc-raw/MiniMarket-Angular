@@ -100,7 +100,7 @@ public class VentaServiceImpl implements VentaService {
         Venta venta = new Venta();
         venta.setCliente(cliente);
         venta.setCajero(cajero);
-        venta.setEstado("COMPLETADO");
+        venta.setEstado("FINALIZADA");
         venta.setTotal(total);
 
         // 8. GUARDAR VENTA
@@ -176,8 +176,8 @@ public class VentaServiceImpl implements VentaService {
         Venta venta = ventaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("La venta con ID " + id + " no existe."));
         
-        if (!"COMPLETADO".equals(venta.getEstado()) && !"PENDIENTE".equals(venta.getEstado())) {
-            throw new RuntimeException("Solo se pueden anular ventas en estado COMPLETADO o PENDIENTE.");
+        if (!"FINALIZADA".equals(venta.getEstado()) && !"PENDIENTE".equals(venta.getEstado())) {
+            throw new RuntimeException("Solo se pueden anular ventas en estado FINALIZADA o PENDIENTE.");
         }
         
         // 🔥 DEVOLVER STOCK - CORREGIDO

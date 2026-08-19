@@ -27,4 +27,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     // Conteo de ventas por cliente (top 5)
     @Query("SELECT v.cliente.nombres, v.cliente.apellidos, COUNT(v) FROM Venta v WHERE v.estado = 'FINALIZADA' GROUP BY v.cliente.id ORDER BY COUNT(v) DESC")
     List<Object[]> topClientes();
+
+    // Ventas de un cliente por su ID
+    List<Venta> findByClienteId(Long clienteId);
 }

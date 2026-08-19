@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import edu.pe.cibertec.dto.LoginRequest;
@@ -29,6 +30,31 @@ public class AuthRestController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registrarCliente(@RequestBody Usuario usuario) {
+        try {
+            // Si el usuario ya existe
+            if (usuarioRepository.findByUsername(usuario.getUsername()) != null) {
+                return ResponseEntity.badRequest().body("El usuario ya existe");
+            }
+
+            // Crear el usuario con rol CLIENTE
+            Usuario nuevo = new Usuario();
+            nuevo.setUsername(usuario.getUsername());
+            nuevo.setPassword(passwordEncoder.encode(usuario.getPassword()));
+            nuevo.setRol("CLIENTE");
+            nuevo.setEstado(true);
+            usuarioRepository.save(nuevo);
+
+            return ResponseEntity.ok("Cliente registrado correctamente");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al registrar: " + e.getMessage());
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {

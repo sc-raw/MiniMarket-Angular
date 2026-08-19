@@ -25,6 +25,9 @@ const atencionGuard = () => {
 export const routes: Routes = [
   { path: '', component: InicioComponent, title: 'MiniMarket - Inicio' },
   { path: 'login', component: LoginComponent, title: 'Login' },
+  { path: 'registro', loadComponent: () => import('./pages/registro/registro.component').then(m => m.RegistroComponent), title: 'Registro' },
+  { path: 'tienda', loadComponent: () => import('./pages/tienda/tienda.component').then(m => m.TiendaComponent) },
+  { path: 'mis-pedidos', loadComponent: () => import('./pages/mis-pedidos/mis-pedidos.component').then(m => m.MisPedidosComponent), title: 'Mis Pedidos' },
   { path: 'productos', component: ProductosComponent, title: 'Productos', canActivate: [authGuard] },
   { path: 'clientes', component: ClientesComponent, title: 'Clientes', canActivate: [clienteGuard] },
   { path: 'categorias', component: CategoriasComponent, title: 'Categorías', canActivate: [adminGuard] },

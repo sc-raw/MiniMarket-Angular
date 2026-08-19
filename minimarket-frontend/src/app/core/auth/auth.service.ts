@@ -20,7 +20,8 @@ export const ROLES = {
   ADMIN: 'ADMIN',
   CAJERO: 'CAJERO',
   REPONEDOR: 'REPONEDOR',
-  ATENCION_CLIENTE: 'ATENCION_CLIENTE'
+  ATENCION_CLIENTE: 'ATENCION_CLIENTE',
+  CLIENTE: 'CLIENTE'
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +84,10 @@ export class AuthService {
 
   esAtencionCliente(): boolean {
     return this.tieneRol(ROLES.ATENCION_CLIENTE);
+  }
+
+  esCliente(): boolean {
+    return this.tieneRol(ROLES.CLIENTE);
   }
 
   // ================= PERMISOS ESPECÍFICOS =================

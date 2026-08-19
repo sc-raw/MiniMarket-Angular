@@ -1,12 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
@@ -50,6 +50,11 @@ import { AuthService } from '../../core/auth/auth.service';
                   </button>
                 </div>
               </form>
+              <hr>
+              <p class="text-center mb-0">
+                ¿Eres cliente y aún no tienes cuenta?
+                <a routerLink="/registro">Regístrate aquí</a>
+              </p>
             </div>
             <div class="card-footer text-center text-muted py-3" style="background:#f8f9fa;">
               <small>
@@ -79,7 +84,12 @@ export class LoginComponent {
       next: (res) => {
         this.cargando.set(false);
         if (res.success) {
-          this.router.navigate(['/']);
+          // Redirigir según el rol
+          if (res.rol === 'CLIENTE') {
+            this.router.navigate(['/tienda']);
+          } else {
+            this.router.navigate(['/']);
+          }
         } else {
           this.error.set(res.message || 'Error al iniciar sesión');
         }
