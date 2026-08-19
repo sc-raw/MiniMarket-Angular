@@ -79,7 +79,7 @@ import { Producto, Categoria } from '../../core/models/models';
               </div>
             </div>
 
-                                        <!-- NUEVOS BOTONES DE ACCESO RÁPIDO PARA REPONEDOR -->
+          <!-- NUEVOS BOTONES DE ACCESO RÁPIDO PARA REPONEDOR -->
               <div class="row mb-3">
                 <div class="col-12">
                   <div class="btn-group w-100" role="group">

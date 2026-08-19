@@ -7,6 +7,7 @@ import { ClienteService } from '../../core/services/cliente.service';
 import { CajeroService } from '../../core/services/cajero.service';
 import { ProductoService } from '../../core/services/producto.service';
 import { Venta, Cliente, Cajero, Producto, CrearVentaRequest, DetalleVentaRequest } from '../../core/models/models';
+import { AuthService } from '../../core/auth/auth.service'; 
 
 interface LineaDetalle {
   productoId: number | null;
@@ -116,15 +117,22 @@ interface LineaDetalle {
                         }
                       </select>
                     </div>
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label fw-bold">Cajero</label>
-                      <select class="form-select" [(ngModel)]="nuevaVenta.cajeroId" name="cajeroId" required>
-                        <option [ngValue]="0">Seleccione...</option>
-                        @for (c of cajeros(); track c.id) {
-                          <option [ngValue]="c.id">{{ c.nombres }}</option>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Cajero</label>
+                        
+                        @if (auth.puedeGestionarProductos()) {
+                          <!-- El Admin puede elegir a cualquier cajero de la lista -->
+                          <select class="form-select" [(ngModel)]="nuevaVenta.cajeroId" name="cajeroId" required>
+                            <option [ngValue]="0">Seleccione...</option>
+                            @for (c of cajeros(); track c.id) {
+                              <option [ngValue]="c.id">{{ c.nombres }}</option>
+                            }
+                          </select>
+                        } @else {
+                      <!-- El Cajero ve su username fijo de forma automática y bloqueada -->
+                          <input type="text" class="form-control" [value]="auth.usuarioActual()?.username || ''" readonly disabled>
                         }
-                      </select>
-                    </div>
+                      </div>
                   </div>
 
                   <!-- Productos a vender -->
@@ -366,6 +374,7 @@ export class VentasComponent implements OnInit {
   private clienteService = inject(ClienteService);
   private cajeroService = inject(CajeroService);
   private productoService = inject(ProductoService);
+  protected auth = inject(AuthService);
 
   // ========== SIGNALS ==========
   ventas = signal<Venta[]>([]);

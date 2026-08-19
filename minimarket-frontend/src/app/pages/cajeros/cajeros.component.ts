@@ -8,7 +8,7 @@ import { Cajero, CajeroUsuarioDTO } from '../../core/models/models';
   standalone: true,
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
+  template: ` 
     <div class="container mt-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
