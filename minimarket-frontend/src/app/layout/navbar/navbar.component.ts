@@ -1,8 +1,9 @@
 // navbar.component.ts
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { CommonModule } from '@angular/common';
+import { WhatsAppService } from '../../core/services/whatsapp.service';
 
 @Component({
   selector: 'app-navbar',
@@ -21,10 +22,10 @@ import { CommonModule } from '@angular/common';
         <div class="collapse navbar-collapse" id="menu">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <a class="nav-link" routerLink="/" routerLinkActive="active" 
+              <a class="nav-link" routerLink="/" routerLinkActive="active"
                  [routerLinkActiveOptions]="{exact:true}">🏠 Inicio</a>
             </li>
-            
+
             @if (auth.estaAutenticado()) {
 
               <!-- 🔥 CLIENTE: links a Tienda y Mis Pedidos -->
@@ -40,8 +41,14 @@ import { CommonModule } from '@angular/common';
               <!-- 🔥 ATENCIÓN AL CLIENTE -->
               @if (auth.esAtencionCliente()) {
                 <li class="nav-item">
-                  <a class="nav-link" routerLink="/pedidos-whatsapp" routerLinkActive="active">
+                  <a class="nav-link position-relative" routerLink="/pedidos-whatsapp" routerLinkActive="active">
                     💬 Pedidos WhatsApp
+                    @if (pendientesCount() > 0) {
+                      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ pendientesCount() }}
+                        <span class="visually-hidden">pedidos pendientes</span>
+                      </span>
+                    }
                   </a>
                 </li>
               }
@@ -72,7 +79,7 @@ import { CommonModule } from '@angular/common';
                 </li>
               }
 
-              <!-- 🛒 Ventas: ADMIN, CAJERO o REPONEDOR -->
+              <!-- 🛒 Ventas: ADMIN, CAJERO -->
               @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO'])) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/ventas" routerLinkActive="active">🛒 Ventas</a>
@@ -103,7 +110,6 @@ import { CommonModule } from '@angular/common';
                 </ul>
               </li>
 
-              
             } @else {
               <li class="nav-item">
                 <a class="nav-link" routerLink="/login">
@@ -118,12 +124,36 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`.navbar-dark { background-color: #2E7D32; }`]
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit, OnDestroy {
   protected auth = inject(AuthService);
   private router = inject(Router);
+  private whatsappService = inject(WhatsAppService);
+
+  pendientesCount = signal(0);
+  private intervalId?: ReturnType<typeof setInterval>;
+
+  ngOnInit(): void {
+    if (this.auth.esAtencionCliente()) {
+      this.actualizarPendientes();
+      // Refrescar cada 30s
+      this.intervalId = setInterval(() => this.actualizarPendientes(), 30000);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+
+  private actualizarPendientes(): void {
+    this.whatsappService.contarPorEstado('PENDIENTE').subscribe({
+      next: (res) => this.pendientesCount.set(res.count || 0),
+      error: () => this.pendientesCount.set(0)
+    });
+  }
 
   logout(): void {
-  this.auth.logout();
-  this.router.navigate(['/login']);
-}
+    if (this.intervalId) clearInterval(this.intervalId);
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 }

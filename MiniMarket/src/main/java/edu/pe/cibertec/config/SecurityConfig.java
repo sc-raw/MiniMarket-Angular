@@ -55,9 +55,11 @@ public class SecurityConfig {
             // 1. Rutas públicas (login, recursos estáticos, errores)
             .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**",
                              "/error", "/acceso-denegado").permitAll()
-            
-            // 2. Webhook de WhatsApp y API REST totalmente públicos
-            // Se usa el comodín doble (**) para cubrir /api/whatsapp, /api/whatsapp/webhook, etc.
+
+            // 2. API REST pública (la autenticación se delega a guards de Angular).
+            //    En producción se endurecería con JWT, pero por ahora queda abierto
+            //    para que la demo funcione sin configurar cookies entre dominios.
+            //    Webhook de WhatsApp también es público (lo llama Meta).
             .requestMatchers("/api/whatsapp/**").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/**").permitAll()

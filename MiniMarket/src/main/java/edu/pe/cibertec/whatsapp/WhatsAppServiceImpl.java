@@ -1,7 +1,9 @@
 package edu.pe.cibertec.whatsapp;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -10,17 +12,25 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import edu.pe.cibertec.dto.CrearVentaRequest;
+import edu.pe.cibertec.dto.DetalleVentaRequest;
 import edu.pe.cibertec.entity.PedidoWhatsApp;
+import edu.pe.cibertec.entity.Venta;
 import edu.pe.cibertec.repository.PedidoWhatsAppRepository;
+import edu.pe.cibertec.service.VentaService;
 
 @Service
 public class WhatsAppServiceImpl implements WhatsAppService {
 
     private final PedidoWhatsAppRepository pedidoRepository;
+    private final VentaService ventaService;
+    private final ObjectMapper objectMapper;
 
-    // Configuración de Meta Business API (reemplazar en application.properties)
     @Value("${whatsapp.api-url:https://graph.facebook.com/v18.0}")
     private String apiUrl;
 
@@ -33,29 +43,34 @@ public class WhatsAppServiceImpl implements WhatsAppService {
     @Value("${whatsapp.verify-token:VERIFY_TOKEN_PLACEHOLDER}")
     private String verifyToken;
 
-    public WhatsAppServiceImpl(PedidoWhatsAppRepository pedidoRepository) {
+    public WhatsAppServiceImpl(PedidoWhatsAppRepository pedidoRepository,
+                               VentaService ventaService,
+                               ObjectMapper objectMapper) {
         this.pedidoRepository = pedidoRepository;
+        this.ventaService = ventaService;
+        this.objectMapper = objectMapper;
     }
+
+    private static final String MENU_BIENVENIDA =
+            "¡Hola! 👋 Bienvenido a MiniMarket.\n\n" +
+            "¿Qué deseas hacer?\n\n" +
+            "1️⃣ Hacer un pedido\n" +
+            "2️⃣ Tengo una duda\n\n" +
+            "Responde con el número 1 o 2.";
 
     /**
      * Procesa un mensaje entrante del webhook de Meta.
-     *
-     * Flujo del bot:
-     *   1. Si no hay pedidos recientes del número → crear NUEVO, responder menú
-     *   2. Si hay pedido NUEVO y mensaje="1" → tipo="PEDIDO", estado="PENDIENTE", pedir productos
-     *   3. Si hay pedido NUEVO y mensaje="2" → tipo="CONSULTA", estado="PENDIENTE"
-     *   4. Si hay pedido PENDIENTE → actualizar con el mensaje del cliente
      */
     @Override
+    @Transactional
     public void procesarMensajeEntrante(String numeroRemitente, String nombreRemitente, String mensaje) {
         System.out.println(">>> WhatsApp entrante de " + numeroRemitente + ": " + mensaje);
 
-        // Buscar el último pedido de este número
         List<PedidoWhatsApp> historial = pedidoRepository
                 .findByNumeroRemitenteOrderByFechaRegistroDesc(numeroRemitente);
 
-        if (historial.isEmpty()) {
-            // PRIMER MENSAJE: crear pedido NUEVO y responder menú
+        // PRIMER MENSAJE o último ATENDIDO → crear NUEVO y responder menú
+        if (historial.isEmpty() || "ATENDIDO".equals(historial.get(0).getEstado())) {
             PedidoWhatsApp pedido = new PedidoWhatsApp();
             pedido.setNumeroRemitente(numeroRemitente);
             pedido.setNombreRemitente(nombreRemitente);
@@ -63,35 +78,11 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             pedido.setTipo(null);
             pedido.setEstado("NUEVO");
             pedidoRepository.save(pedido);
-
-            enviarMensaje(numeroRemitente,
-                    "¡Hola! 👋 Bienvenido a MiniMarket.\n\n" +
-                    "¿Qué deseas hacer?\n\n" +
-                    "1️⃣ Hacer un pedido\n" +
-                    "2️⃣ Tengo una duda\n\n" +
-                    "Responde con el número 1 o 2.");
+            enviarMensaje(numeroRemitente, MENU_BIENVENIDA);
             return;
         }
 
         PedidoWhatsApp ultimo = historial.get(0);
-
-        // Si el último ya fue atendido, crear uno nuevo
-        if ("ATENDIDO".equals(ultimo.getEstado())) {
-            PedidoWhatsApp nuevo = new PedidoWhatsApp();
-            nuevo.setNumeroRemitente(numeroRemitente);
-            nuevo.setNombreRemitente(nombreRemitente);
-            nuevo.setMensaje(mensaje);
-            nuevo.setEstado("NUEVO");
-            pedidoRepository.save(nuevo);
-
-            enviarMensaje(numeroRemitente,
-                    "¡Hola! 👋 Bienvenido a MiniMarket.\n\n" +
-                    "¿Qué deseas hacer?\n\n" +
-                    "1️⃣ Hacer un pedido\n" +
-                    "2️⃣ Tengo una duda\n\n" +
-                    "Responde con el número 1 o 2.");
-            return;
-        }
 
         // Si está NUEVO, interpretar la respuesta del menú
         if ("NUEVO".equals(ultimo.getEstado())) {
@@ -99,7 +90,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             if ("1".equals(respuesta)) {
                 ultimo.setTipo("PEDIDO");
                 ultimo.setEstado("PENDIENTE");
-                // Guardar el mensaje original como contexto
+                ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
                 pedidoRepository.save(ultimo);
                 enviarMensaje(numeroRemitente,
                         "¡Genial! 📦 Para procesar tu pedido necesitamos:\n\n" +
@@ -111,6 +102,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             } else if ("2".equals(respuesta)) {
                 ultimo.setTipo("CONSULTA");
                 ultimo.setEstado("PENDIENTE");
+                ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
                 pedidoRepository.save(ultimo);
                 enviarMensaje(numeroRemitente,
                         "Entendido. 📝 Cuéntanos tu duda y un ejecutivo te responderá pronto.");
@@ -121,18 +113,30 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             return;
         }
 
-        // Si está PENDIENTE, el cliente está enviando más detalles
+        // Si está PENDIENTE → el cliente envía más detalles
         if ("PENDIENTE".equals(ultimo.getEstado())) {
             ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
             pedidoRepository.save(ultimo);
             enviarMensaje(numeroRemitente,
                     "✅ Mensaje recibido. Un ejecutivo de Atención al Cliente te responderá pronto. " +
                     "Gracias por tu paciencia. 🙌");
+            return;
+        }
+
+        // 🔥 FIX BUG: si está EN_PROCESO (operador lo está revisando) y el cliente manda
+        // otro mensaje → NO SE PIERDE, se acumula y se le avisa al cliente.
+        if ("EN_PROCESO".equals(ultimo.getEstado())) {
+            ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
+            pedidoRepository.save(ultimo);
+            enviarMensaje(numeroRemitente,
+                    "✅ Mensaje recibido. Un ejecutivo ya está revisando tu caso, " +
+                    "te responderá en breve. 🙏");
         }
     }
 
     /**
      * Envía un mensaje de texto a un número de WhatsApp usando la API de Meta.
+     * 🔥 FIX: usa ObjectMapper para construir el JSON de forma segura (no más strings concatenados).
      */
     @Override
     public void enviarMensaje(String numeroDestino, String mensaje) {
@@ -148,11 +152,20 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             headers.setBearerAuth(token);
 
             String url = apiUrl + "/" + phoneNumberId + "/messages";
-            String body = "{\"messaging_product\":\"whatsapp\",\"to\":\"" + numeroDestino +
-                    "\",\"type\":\"text\",\"text\":{\"body\":\"" + mensaje.replace("\"", "\\\"")
-                    .replace("\n", "\\n") + "\"}}";
 
-            HttpEntity<String> request = new HttpEntity<>(body, headers);
+            // 🔥 Construir body con Map y serializar con ObjectMapper (escapa comillas, emojis, etc.)
+            Map<String, Object> textPart = new HashMap<>();
+            textPart.put("body", mensaje);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("messaging_product", "whatsapp");
+            body.put("to", numeroDestino);
+            body.put("type", "text");
+            body.put("text", textPart);
+
+            String jsonBody = objectMapper.writeValueAsString(body);
+
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
 
             System.out.println(">>> WhatsApp enviado a " + numeroDestino + ": " + response.getStatusCode());
@@ -180,11 +193,11 @@ public class WhatsAppServiceImpl implements WhatsAppService {
     public PedidoWhatsApp atender(Long id, String respuesta) {
         PedidoWhatsApp pedido = pedidoRepository.findById(id).orElse(null);
         if (pedido == null) return null;
+        // Acumular la respuesta al mensaje para que se vea en el chat
         pedido.setRespuesta(respuesta);
         pedido.setEstado("ATENDIDO");
         pedido.setFechaAtencion(LocalDateTime.now());
         pedidoRepository.save(pedido);
-        // Enviar la respuesta al cliente por WhatsApp
         enviarMensaje(pedido.getNumeroRemitente(), respuesta);
         return pedido;
     }
@@ -203,5 +216,60 @@ public class WhatsAppServiceImpl implements WhatsAppService {
         if (pedido == null) return null;
         pedido.setVentaId(ventaId);
         return pedidoRepository.save(pedido);
+    }
+
+    // ===== Nuevos métodos =====
+
+    @Override
+    @Transactional
+    public PedidoWhatsApp enviarMensajeOperador(Long pedidoId, String texto) {
+        PedidoWhatsApp pedido = pedidoRepository.findById(pedidoId).orElse(null);
+        if (pedido == null) return null;
+        // Acumular la respuesta del operador al "mensaje" para que aparezca en el chat
+        // La separación con " | [OPERADOR]: " permite distinguir en el frontend
+        String actual = pedido.getMensaje() == null ? "" : pedido.getMensaje();
+        // Limitar a 500 chars (columna)
+        String nuevo = actual + " | [OPERADOR]: " + texto;
+        if (nuevo.length() > 480) {
+            nuevo = nuevo.substring(nuevo.length() - 480);
+        }
+        pedido.setMensaje(nuevo);
+        pedidoRepository.save(pedido);
+        // Enviar el mensaje al cliente por WhatsApp
+        enviarMensaje(pedido.getNumeroRemitente(), texto);
+        return pedido;
+    }
+
+    @Override
+    public long contarPorEstado(String estado) {
+        return pedidoRepository.countByEstado(estado);
+    }
+
+    /**
+     * Convierte un pedido WhatsApp en una Venta PENDIENTE.
+     * El operador ya validó cliente + productos desde el frontend.
+     * El cajero deberá cobrarla después desde /ventas.
+     */
+    @Override
+    @Transactional
+    public Venta convertirAVenta(Long pedidoId, Long clienteId, Long cajeroId,
+                                  List<DetalleVentaRequest> productos) {
+        // 1. Crear la venta PENDIENTE
+        CrearVentaRequest request = new CrearVentaRequest();
+        request.setClienteId(clienteId);
+        request.setCajeroId(cajeroId);
+        request.setProductos(productos);
+        Venta venta = ventaService.crearVenta(request);
+
+        // 2. Vincular el pedido con la venta creada
+        vincularVenta(pedidoId, venta.getId());
+
+        // 3. Marcar el pedido como ATENDIDO con mensaje informativo
+        String respuesta = "✅ Tu pedido fue registrado. Boleta #" + venta.getId() +
+                ". Total: S/." + venta.getTotal() +
+                ". Acércate a caja para confirmar tu pago. 🙌";
+        atender(pedidoId, respuesta);
+
+        return venta;
     }
 }

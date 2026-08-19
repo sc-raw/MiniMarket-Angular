@@ -1,26 +1,35 @@
 package edu.pe.cibertec.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import edu.pe.cibertec.dto.DetalleVentaRequest;
 import edu.pe.cibertec.entity.PedidoWhatsApp;
+import edu.pe.cibertec.entity.Venta;
 import edu.pe.cibertec.whatsapp.WhatsAppService;
 
 /**
  * Controlador REST para la integración de WhatsApp con Meta Business API.
  *
- * Endpoints:
- *   GET  /api/whatsapp/webhook      → Verificación del webhook (Meta lo llama al configurar)
+ * Webhook (públicos - los llama Meta):
+ *   GET  /api/whatsapp/webhook      → Verificación del webhook
  *   POST /api/whatsapp/webhook      → Recibe mensajes de los clientes
- *   GET  /api/whatsapp/pedidos      → Lista todos los pedidos/consultas (atención al cliente)
- *   GET  /api/whatsapp/pedidos/pendientes → Lista solo los pendientes
- *   GET  /api/whatsapp/pedidos/tipo/{tipo} → Lista por tipo (PEDIDO o CONSULTA)
- *   PUT  /api/whatsapp/pedidos/{id}/en-proceso → Marca como en revisión
- *   PUT  /api/whatsapp/pedidos/{id}/atender   → Atiende con respuesta y envía WhatsApp
+ *
+ * Gestión de pedidos (requieren rol ATENCION_CLIENTE, ver SecurityConfig):
+ *   GET  /api/whatsapp/pedidos                    → Lista todos
+ *   GET  /api/whatsapp/pedidos/pendientes         → Lista solo pendientes
+ *   GET  /api/whatsapp/pedidos/tipo/{tipo}        → Lista por tipo
+ *   GET  /api/whatsapp/pedidos/count?estado=X     → Conteo (para badge navbar)
+ *   PUT  /api/whatsapp/pedidos/{id}/en-proceso    → Marca como en revisión
+ *   PUT  /api/whatsapp/pedidos/{id}/atender       → Atiende con respuesta (cierra pedido)
+ *   POST /api/whatsapp/pedidos/{id}/enviar        → Envía mensaje libre (no cierra)
+ *   POST /api/whatsapp/pedidos/{id}/convertir-venta → Convierte pedido en Venta PENDIENTE
  */
 @RestController
 @RequestMapping("/api/whatsapp")
@@ -35,12 +44,8 @@ public class WhatsAppRestController {
     @Value("${whatsapp.verify-token:VERIFY_TOKEN_PLACEHOLDER}")
     private String verifyToken;
 
-    // ============ WEBHOOK ============
+    // ============ WEBHOOK (PÚBLICOS) ============
 
-    /**
-     * Verificación del webhook — Meta lo llama cuando configuras la URL en el dashboard.
-     * Devuelve el challenge si el token coincide.
-     */
     @GetMapping(value = "/webhook", produces = "text/plain")
     public ResponseEntity<String> verificarWebhook(
             @RequestParam(name = "hub.mode", required = false) String mode,
@@ -50,10 +55,7 @@ public class WhatsAppRestController {
         System.out.println(">>> Intento de verificación Webhook recibido:");
         System.out.println("    hub.mode: " + mode);
         System.out.println("    hub.verify_token: " + token);
-        System.out.println("    hub.challenge: " + challenge);
-        System.out.println("    Token configurado en backend: " + verifyToken);
 
-        // Si la propiedad no se leyó bien, usar el valor por defecto que envías desde Meta
         String tokenEsperado = (verifyToken != null && !verifyToken.contains("PLACEHOLDER"))
                 ? verifyToken
                 : "minimarket_verify_token_2026";
@@ -67,13 +69,8 @@ public class WhatsAppRestController {
         return ResponseEntity.status(403).body("Verificación fallida");
     }
 
-    /**
-     * Recibe los mensajes de WhatsApp de los clientes.
-     * Meta envía los mensajes aquí cuando un cliente escribe al número del bot.
-     */
     @PostMapping("/webhook")
     public ResponseEntity<String> recibirMensaje(@RequestBody String payload) {
-        // 1. Imprimir siempre la llegada de la petición para confirmar recepción
         System.out.println(">>> PETICIÓN RECIBIDA EN WEBHOOK (RAW): " + payload);
         System.out.flush();
 
@@ -85,15 +82,12 @@ public class WhatsAppRestController {
                 com.fasterxml.jackson.databind.JsonNode changes = entry.get(0).path("changes");
                 if (changes.isArray() && !changes.isEmpty()) {
                     com.fasterxml.jackson.databind.JsonNode value = changes.get(0).path("value");
-
-                    // Comprobar mensajes entrantes
                     com.fasterxml.jackson.databind.JsonNode messages = value.path("messages");
+
                     if (messages.isArray() && !messages.isEmpty()) {
                         com.fasterxml.jackson.databind.JsonNode messageObj = messages.get(0);
-
                         String numeroRemitente = messageObj.path("from").asText(null);
 
-                        // Validar si el mensaje es de texto
                         String mensaje = null;
                         if (messageObj.has("text")) {
                             mensaje = messageObj.path("text").path("body").asText(null);
@@ -103,7 +97,6 @@ public class WhatsAppRestController {
                             mensaje = messageObj.path("interactive").path("button_reply").path("title").asText(null);
                         }
 
-                        // Extraer el nombre desde contacts -> profile -> name
                         String nombreRemitente = "Cliente WhatsApp";
                         com.fasterxml.jackson.databind.JsonNode contacts = value.path("contacts");
                         if (contacts.isArray() && !contacts.isEmpty()) {
@@ -111,13 +104,15 @@ public class WhatsAppRestController {
                         }
 
                         if (numeroRemitente != null && mensaje != null) {
-                            System.out.println(">>> PROCESANDO MENSAJE DE: " + numeroRemitente + " (" + nombreRemitente + "): " + mensaje);
+                            System.out.println(">>> PROCESANDO MENSAJE DE: " + numeroRemitente
+                                    + " (" + nombreRemitente + "): " + mensaje);
                             whatsappService.procesarMensajeEntrante(numeroRemitente, nombreRemitente, mensaje);
                         } else {
-                            System.out.println(">>> MENSAJE IGNORADO: numeroRemitente=" + numeroRemitente + ", mensaje=" + mensaje);
+                            System.out.println(">>> MENSAJE IGNORADO: numeroRemitente="
+                                    + numeroRemitente + ", mensaje=" + mensaje);
                         }
                     } else if (value.has("statuses")) {
-                        System.out.println(">>> Evento de estado de mensaje recibido (sent/delivered/read). Ignorando.");
+                        System.out.println(">>> Evento de estado de mensaje (sent/delivered/read). Ignorando.");
                     } else {
                         System.out.println(">>> Evento de Webhook sin array de mensajes válido.");
                     }
@@ -126,12 +121,12 @@ public class WhatsAppRestController {
             return ResponseEntity.ok("EVENT_RECEIVED");
         } catch (Exception e) {
             System.err.println(">>> Error procesando webhook: " + e.getMessage());
-            e.printStackTrace(); // Imprime la traza completa para diagnosticar en consola
+            e.printStackTrace();
             return ResponseEntity.ok("EVENT_RECEIVED");
         }
     }
 
-    // ============ GESTIÓN DE PEDIDOS (atención al cliente) ============
+    // ============ GESTIÓN DE PEDIDOS ============
 
     @GetMapping("/pedidos")
     public List<PedidoWhatsApp> listarTodos() {
@@ -148,6 +143,16 @@ public class WhatsAppRestController {
         return whatsappService.listarPorTipo(tipo);
     }
 
+    /** Conteo por estado — para badge en navbar */
+    @GetMapping("/pedidos/count")
+    public ResponseEntity<Map<String, Long>> contarPorEstado(
+            @RequestParam(name = "estado", defaultValue = "PENDIENTE") String estado) {
+        long count = whatsappService.contarPorEstado(estado);
+        Map<String, Long> result = new HashMap<>();
+        result.put("count", count);
+        return ResponseEntity.ok(result);
+    }
+
     @PutMapping("/pedidos/{id}/en-proceso")
     public ResponseEntity<?> marcarEnProceso(@PathVariable Long id) {
         PedidoWhatsApp p = whatsappService.marcarEnProceso(id);
@@ -158,5 +163,55 @@ public class WhatsAppRestController {
     public ResponseEntity<?> atender(@PathVariable Long id, @RequestParam String respuesta) {
         PedidoWhatsApp p = whatsappService.atender(id, respuesta);
         return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
+    }
+
+    /** Envía un mensaje libre del operador (no cierra el pedido). */
+    @PostMapping("/pedidos/{id}/enviar")
+    public ResponseEntity<?> enviarMensaje(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String texto = body.get("texto");
+        if (texto == null || texto.isBlank()) {
+            Map<String, String> err = new HashMap<>();
+            err.put("mensaje", "El texto no puede estar vacío");
+            return ResponseEntity.badRequest().body(err);
+        }
+        PedidoWhatsApp p = whatsappService.enviarMensajeOperador(id, texto);
+        return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Convierte un pedido WhatsApp en una Venta PENDIENTE.
+     * Body: { clienteId, cajeroId, productos: [{productoId, cantidad}] }
+     * El cajero deberá cobrarla desde /ventas después.
+     */
+    @PostMapping("/pedidos/{id}/convertir-venta")
+    public ResponseEntity<?> convertirAVenta(@PathVariable Long id, @RequestBody ConvertirVentaRequest req) {
+        try {
+            Venta venta = whatsappService.convertirAVenta(id, req.getClienteId(),
+                    req.getCajeroId(), req.getProductos());
+            Map<String, Object> result = new HashMap<>();
+            result.put("mensaje", "Venta creada");
+            result.put("ventaId", venta.getId());
+            result.put("total", venta.getTotal());
+            result.put("estado", venta.getEstado());
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("mensaje", e.getMessage());
+            return ResponseEntity.badRequest().body(err);
+        }
+    }
+
+    // DTO interno para el endpoint convertir-venta
+    public static class ConvertirVentaRequest {
+        private Long clienteId;
+        private Long cajeroId;
+        private List<DetalleVentaRequest> productos;
+
+        public Long getClienteId() { return clienteId; }
+        public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
+        public Long getCajeroId() { return cajeroId; }
+        public void setCajeroId(Long cajeroId) { this.cajeroId = cajeroId; }
+        public List<DetalleVentaRequest> getProductos() { return productos; }
+        public void setProductos(List<DetalleVentaRequest> productos) { this.productos = productos; }
     }
 }
