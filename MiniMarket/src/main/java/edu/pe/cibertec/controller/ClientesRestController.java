@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import edu.pe.cibertec.entity.Cliente;
+import edu.pe.cibertec.entity.Venta;
+import edu.pe.cibertec.repository.VentaRepository;
 import edu.pe.cibertec.service.ClienteService;
 
 @RestController
@@ -16,6 +18,9 @@ public class ClientesRestController {
 
     @Autowired
     private ClienteService clienteService;
+
+    @Autowired
+    private VentaRepository ventaRepository;
 
     @GetMapping
     public List<Cliente> listar() {
@@ -26,6 +31,26 @@ public class ClientesRestController {
     public ResponseEntity<Cliente> buscar(@PathVariable Long id) {
         Cliente c = clienteService.buscarPorId(id);
         return c != null ? ResponseEntity.ok(c) : ResponseEntity.notFound().build();
+    }
+
+    // 🔥 Devuelve las últimas 5 ventas del cliente (para mostrar su "cuenta")
+    @GetMapping("/{id}/ultimas-ventas")
+    public ResponseEntity<List<Venta>> ultimasVentas(@PathVariable Long id) {
+        if (clienteService.buscarPorId(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
+        List<Venta> todas = ventaRepository.findByClienteIdOrderByFechaRegistroDesc(id);
+        // limit to 5
+        return ResponseEntity.ok(todas.subList(0, Math.min(5, todas.size())));
+    }
+
+    // 🔥 Todos los pedidos del cliente (para "Mis Pedidos")
+    @GetMapping("/{id}/pedidos")
+    public ResponseEntity<List<Venta>> pedidosCliente(@PathVariable Long id) {
+        if (clienteService.buscarPorId(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(ventaRepository.findByClienteIdOrderByFechaRegistroDesc(id));
     }
 
     @PostMapping

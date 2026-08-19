@@ -23,7 +23,19 @@ import { Router, RouterLink } from '@angular/router';
 
           <form (ngSubmit)="registrar()">
             <div class="mb-3">
-              <label class="form-label fw-bold">Usuario (Correo o DNI)</label>
+              <label class="form-label fw-bold">DNI</label>
+              <input type="text" class="form-control" [(ngModel)]="dni" name="dni" required maxlength="8" pattern="[0-9]*" placeholder="Ej: 47200111">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Nombres</label>
+              <input type="text" class="form-control" [(ngModel)]="nombres" name="nombres" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Apellidos</label>
+              <input type="text" class="form-control" [(ngModel)]="apellidos" name="apellidos" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Usuario</label>
               <input type="text" class="form-control" [(ngModel)]="username" name="username" required>
             </div>
             <div class="mb-3">
@@ -53,6 +65,9 @@ export class RegistroComponent {
 
   username = '';
   password = '';
+  dni = '';
+  nombres = '';
+  apellidos = '';
   cargando = signal(false);
   error = signal('');
   exito = signal('');
@@ -64,7 +79,10 @@ export class RegistroComponent {
 
     this.http.post('/api/auth/register', {
       username: this.username,
-      password: this.password
+      password: this.password,
+      dni: this.dni,
+      nombres: this.nombres,
+      apellidos: this.apellidos
     }, { responseType: 'text' }).subscribe({
       next: () => {
         this.cargando.set(false);

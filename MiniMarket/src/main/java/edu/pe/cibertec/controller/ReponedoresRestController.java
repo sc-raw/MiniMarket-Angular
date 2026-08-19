@@ -1,6 +1,7 @@
 package edu.pe.cibertec.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,21 +43,22 @@ public class ReponedoresRestController {
     @Transactional
     public ResponseEntity<?> crearReponedorConUsuario(@RequestBody ReponedorUsuarioDTO dto) {
         try {
-            // 1. Guardamos el reponedor
+            // 1. Guardamos el reponedor (Hibernate le asigna ID)
             Reponedor nuevoReponedor = dto.getReponedor();
             reponedorRepository.save(nuevoReponedor);
 
-            // 2. Creamos y guardamos el usuario
+            // 2. Creamos el usuario y lo VINCULAMOS al reponedor
             Usuario u = new Usuario();
             u.setUsername(dto.getUsername());
             u.setPassword(passwordEncoder.encode(dto.getPassword()));
             u.setRol("REPONEDOR");
             u.setEstado(true);
+            u.setReponedor(nuevoReponedor);   // 🔥 FK que faltaba
             usuarioRepository.save(u);
 
-            return ResponseEntity.ok("Reponedor y Usuario creados con éxito");
+            return ResponseEntity.ok(Map.of("mensaje", "Reponedor y Usuario creados con éxito"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("mensaje", "Error al crear: " + e.getMessage()));
         }
     }
 
@@ -134,6 +136,6 @@ public class ReponedoresRestController {
         }
         reponedor.setEstado(false); // baja lógica
         empleadoService.guardar(reponedor);
-        return ResponseEntity.ok("Reponedor desactivado correctamente.");
+        return ResponseEntity.ok(Map.of("mensaje", "Reponedor desactivado correctamente."));
     }
 }

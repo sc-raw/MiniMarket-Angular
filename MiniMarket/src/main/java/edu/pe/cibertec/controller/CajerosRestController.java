@@ -1,6 +1,7 @@
 package edu.pe.cibertec.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,6 @@ public class CajerosRestController {
     @Autowired
     private EmpleadoService empleadoService;
 
-    // Nuevas dependencias para el endpoint crear-con-usuario
     @Autowired
     private CajeroRepository cajeroRepository;
 
@@ -34,26 +34,27 @@ public class CajerosRestController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // ---------- ENDPOINT NUEVO ----------
+    // ---------- ENDPOINT: CREAR CAJERO + USUARIO VINCULADOS ----------
     @PostMapping("/crear-con-usuario")
     @Transactional
     public ResponseEntity<?> crearCajeroConUsuario(@RequestBody CajeroUsuarioDTO dto) {
         try {
-            // 1. Guardamos el cajero
+            // 1. Guardamos el cajero (Hibernate le asigna ID)
             Cajero nuevoCajero = dto.getCajero();
             cajeroRepository.save(nuevoCajero);
 
-            // 2. Creamos y guardamos el usuario vinculado
+            // 2. Creamos el usuario y lo VINCULAMOS al cajero
             Usuario u = new Usuario();
             u.setUsername(dto.getUsername());
             u.setPassword(passwordEncoder.encode(dto.getPassword()));
             u.setRol("CAJERO");
             u.setEstado(true);
+            u.setCajero(nuevoCajero);   // 🔥 FK que faltaba
             usuarioRepository.save(u);
 
-            return ResponseEntity.ok("Cajero y Usuario creados con éxito");
+            return ResponseEntity.ok(Map.of("mensaje", "Cajero y Usuario creados con éxito"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("mensaje", "Error al crear: " + e.getMessage()));
         }
     }
 
@@ -132,6 +133,6 @@ public class CajerosRestController {
         }
         cajero.setEstado(false); // baja lógica
         empleadoService.guardar(cajero);
-        return ResponseEntity.ok("Cajero desactivado correctamente.");
+        return ResponseEntity.ok(Map.of("mensaje", "Cajero desactivado correctamente."));
     }
 }

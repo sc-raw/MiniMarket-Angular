@@ -40,6 +40,15 @@ public class Venta {
     @Column(length = 20, nullable = false)
     private String estado = "PENDIENTE";
 
+    // Método de pago (EFECTIVO / YAPE / PLIN / SIP)
+    // se llena al confirmar el pago en la simulación
+    @Column(length = 20)
+    private String metodoPago;
+
+    // Monto con el que pagó el cliente (efectivo) — para calcular vuelto
+    @Column(precision = 10, scale = 2)
+    private BigDecimal montoRecibido = BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 }

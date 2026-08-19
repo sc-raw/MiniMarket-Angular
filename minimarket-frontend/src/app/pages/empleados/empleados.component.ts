@@ -506,14 +506,9 @@ export class EmpleadosComponent implements OnInit {
 
   private onGuardadoError(err: any): void {
     this.guardando.set(false);
-    if (err.status === 200) {
-      this.cerrarFormulario();
-      this.mensaje.set('Empleado guardado correctamente.');
-      this.cargar();
-      return;
-    }
     console.error(err);
-    this.error.set(typeof err?.error === 'string' ? err.error : 'Error al guardar el empleado.');
+    const msg = err.error?.mensaje || err.error?.message || err.error;
+    this.error.set(typeof msg === 'string' ? msg : 'Error al guardar el empleado.');
   }
 
   eliminar(e: EmpleadoUI): void {

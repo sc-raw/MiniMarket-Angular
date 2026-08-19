@@ -12,11 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import edu.pe.cibertec.dto.ConfirmarPagoRequest;
 import edu.pe.cibertec.dto.CrearVentaRequest;
 import edu.pe.cibertec.dto.VentaWebDTO;
 import edu.pe.cibertec.entity.Cliente;
+import edu.pe.cibertec.entity.Usuario;
 import edu.pe.cibertec.entity.Venta;
 import edu.pe.cibertec.repository.ClienteRepository;
+import edu.pe.cibertec.repository.UsuarioRepository;
 import edu.pe.cibertec.repository.VentaRepository;
 import edu.pe.cibertec.service.VentaService;
 
@@ -32,6 +35,9 @@ public class VentasRestController {
 
     @Autowired
     private VentaRepository ventaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     // ---------- VENTAS POR DNI (historial del cliente) ----------
     @GetMapping("/cliente/{dni}")
@@ -60,13 +66,24 @@ public class VentasRestController {
                 cliente = clienteRepository.save(nuevo);
             }
 
-            // 2. Crear la venta asignada a un cajero por defecto (ej. ID 1, el admin)
+            // 2. Vincular la Cliente al Usuario CLIENTE logueado (si viene el username)
+            if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+                Usuario usuario = usuarioRepository.findByUsername(dto.getUsername());
+                if (usuario != null && usuario.getCliente() == null) {
+                    usuario.setCliente(cliente);
+                    usuarioRepository.save(usuario);
+                }
+            }
+
+            // 3. Crear la venta asignada a un cajero por defecto (ej. ID 1, el admin)
             CrearVentaRequest request = new CrearVentaRequest();
             request.setClienteId(cliente.getId());
             request.setCajeroId(1L); // Asumimos que el cajero/admin con ID 1 existe
             request.setProductos(dto.getProductos());
 
             Venta venta = ventaService.crearVenta(request);
+            // La compra online se considera pagada de inmediato (sin simulación)
+            venta = ventaService.confirmarPago(venta.getId(), "EFECTIVO", venta.getTotal());
             return ResponseEntity.ok(venta);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error en venta web: " + e.getMessage());
@@ -102,6 +119,20 @@ public class VentasRestController {
             return ResponseEntity.ok(venta);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ---------- CONFIRMAR PAGO (simulación de pago en POS) ----------
+    @PostMapping("/{id}/pagar")
+    public ResponseEntity<?> confirmarPago(@PathVariable Long id,
+                                           @RequestBody ConfirmarPagoRequest pago) {
+        try {
+            Venta venta = ventaService.confirmarPago(id, pago.getMetodoPago(), pago.getMontoRecibido());
+            return ResponseEntity.ok(venta);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("mensaje", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 

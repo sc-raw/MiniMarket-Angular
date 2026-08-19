@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-mis-pedidos',
@@ -15,17 +16,18 @@ import { RouterLink } from '@angular/router';
         <a routerLink="/tienda" class="btn btn-outline-success">🛒 Volver a la tienda</a>
       </div>
 
-      <div class="input-group mb-4">
-        <input type="text" class="form-control" placeholder="Ingresa tu DNI para ver tus pedidos"
-               [(ngModel)]="dni" (keyup.enter)="buscar()" maxlength="8">
-        <button class="btn btn-success" (click)="buscar()">Buscar</button>
-      </div>
-
-      @if (error()) {
+      @if (cargando()) {
+        <div class="text-center py-4">
+          <span class="spinner-border text-success"></span>
+        </div>
+      } @else if (error()) {
         <div class="alert alert-danger">{{ error() }}</div>
-      }
-
-      @if (pedidos().length > 0) {
+      } @else if (sinCliente()) {
+        <div class="alert alert-info">
+          Aún no tienes un perfil de cliente vinculado.
+          Realiza tu primera compra en la tienda para ver tus pedidos aquí.
+        </div>
+      } @else if (pedidos().length > 0) {
         <div class="row">
           @for (p of pedidos(); track p.id) {
             <div class="col-md-6 mb-3">
@@ -42,29 +44,40 @@ import { RouterLink } from '@angular/router';
             </div>
           }
         </div>
-      } @else if (busco()) {
-        <div class="alert alert-info">No tienes pedidos registrados con este DNI.</div>
+      } @else {
+        <div class="alert alert-info">No tienes pedidos registrados.</div>
       }
     </div>
   `
 })
-export class MisPedidosComponent {
+export class MisPedidosComponent implements OnInit {
   private http = inject(HttpClient);
-  dni = '';
-  busco = signal(false);
+  private auth = inject(AuthService);
+
+  cargando = signal(false);
+  sinCliente = signal(false);
   error = signal('');
   pedidos = signal<any[]>([]);
 
-  buscar() {
-    if (!this.dni.trim()) return;
-    this.busco.set(true);
+  ngOnInit(): void {
+    const clienteId = this.auth.clienteId();
+    if (!clienteId) {
+      this.sinCliente.set(true);
+      return;
+    }
+    this.cargar(clienteId);
+  }
+
+  private cargar(clienteId: number) {
+    this.cargando.set(true);
     this.error.set('');
-    this.http.get<any[]>(`/api/ventas/cliente/${this.dni}`).subscribe({
+    this.http.get<any[]>(`/api/clientes/${clienteId}/pedidos`).subscribe({
       next: (data) => this.pedidos.set(data ?? []),
       error: () => {
         this.pedidos.set([]);
         this.error.set('Error al consultar tus pedidos.');
-      }
+      },
+      complete: () => this.cargando.set(false)
     });
   }
 }

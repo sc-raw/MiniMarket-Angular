@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Cliente } from '../models/models';
+import { Cliente, Venta } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ClienteService {
@@ -10,6 +10,11 @@ export class ClienteService {
 
   listar(): Observable<Cliente[]> {
     return this.http.get<Cliente[]>(this.baseUrl);
+  }
+
+  // 🔥 Devuelve las últimas 5 ventas del cliente (su "cuenta")
+  ultimasVentas(id: number): Observable<Venta[]> {
+    return this.http.get<Venta[]>(`${this.baseUrl}/${id}/ultimas-ventas`);
   }
 
   guardar(cliente: Cliente): Observable<Cliente> {

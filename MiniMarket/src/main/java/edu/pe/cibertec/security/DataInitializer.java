@@ -59,8 +59,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void crearUsuariosYEmpleados() {
-        crearUsuario("admin", "admin123", "ADMIN");
-        
+        crearUsuario("admin", "admin123", "ADMIN", null, null);
+
         Cajero c1 = new Cajero();
         c1.setDni("12345678");
         c1.setNombres("Juan Carlos");
@@ -73,7 +73,7 @@ public class DataInitializer implements CommandLineRunner {
         c1.setSalario(new BigDecimal("1500.00"));
         c1.setTurno("MAÑANA");
         cajeroRepository.save(c1);
-        crearUsuario("cajero", "cajero123", "CAJERO");
+        crearUsuario("cajero", "cajero123", "CAJERO", c1, null);
 
         Cajero c2 = new Cajero();
         c2.setDni("87654321");
@@ -87,7 +87,7 @@ public class DataInitializer implements CommandLineRunner {
         c2.setSalario(new BigDecimal("1500.00"));
         c2.setTurno("TARDE");
         cajeroRepository.save(c2);
-        crearUsuario("cajero2", "cajero456", "CAJERO");
+        crearUsuario("cajero2", "cajero456", "CAJERO", c2, null);
 
         Reponedor r1 = new Reponedor();
         r1.setDni("11223344");
@@ -101,25 +101,28 @@ public class DataInitializer implements CommandLineRunner {
         r1.setSalario(new BigDecimal("1200.00"));
         r1.setArea("ALMACEN");
         reponedorRepository.save(r1);
-        crearUsuario("reponedor", "reponedor123", "REPONEDOR");
+        crearUsuario("reponedor", "reponedor123", "REPONEDOR", null, r1);
 
-        crearUsuario("atencion1", "atencion123", "ATENCION_CLIENTE");
-        crearUsuario("atencion2", "atencion456", "ATENCION_CLIENTE");
+        crearUsuario("atencion1", "atencion123", "ATENCION_CLIENTE", null, null);
+        crearUsuario("atencion2", "atencion456", "ATENCION_CLIENTE", null, null);
 
         System.out.println(">>>     admin / admin123           (ADMIN)");
-        System.out.println(">>>     cajero / cajero123         (CAJERO - Juan Carlos)");
-        System.out.println(">>>     cajero2 / cajero456        (CAJERO - Maria Fernanda)");
-        System.out.println(">>>     reponedor / reponedor123   (REPONEDOR - Pedro Luis)");
+        System.out.println(">>>     cajero / cajero123         (CAJERO - Juan Carlos Perez Garcia)");
+        System.out.println(">>>     cajero2 / cajero456        (CAJERO - Maria Fernanda Lopez Diaz)");
+        System.out.println(">>>     reponedor / reponedor123   (REPONEDOR - Pedro Luis Suarez Gomez)");
         System.out.println(">>>     atencion1 / atencion123    (ATENCION_CLIENTE)");
         System.out.println(">>>     atencion2 / atencion456    (ATENCION_CLIENTE)");
     }
 
-    private void crearUsuario(String username, String password, String rol) {
+    private void crearUsuario(String username, String password, String rol,
+                              Cajero cajero, Reponedor reponedor) {
         Usuario u = new Usuario();
         u.setUsername(username);
         u.setPassword(passwordEncoder.encode(password));
         u.setRol(rol);
         u.setEstado(true);
+        u.setCajero(cajero);           // 🔥 vinculacion
+        u.setReponedor(reponedor);     // 🔥 vinculacion
         usuarioRepository.save(u);
     }
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { Producto } from '../../core/models/models';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-tienda',
@@ -61,9 +62,14 @@ import { Producto } from '../../core/models/models';
                 
                 <hr>
                 <h6>Datos de Envío</h6>
-                <input type="text" class="form-control mb-2" placeholder="DNI" [(ngModel)]="dniCliente">
-                <input type="text" class="form-control mb-2" placeholder="Nombres" [(ngModel)]="nombresCliente">
-                <input type="text" class="form-control mb-2" placeholder="Apellidos" [(ngModel)]="apellidosCliente">
+                <input type="text" class="form-control mb-2" placeholder="DNI" [(ngModel)]="dniCliente" [readonly]="esClienteVinculado">
+                <input type="text" class="form-control mb-2" placeholder="Nombres" [(ngModel)]="nombresCliente" [readonly]="esClienteVinculado">
+                <input type="text" class="form-control mb-2" placeholder="Apellidos" [(ngModel)]="apellidosCliente" [readonly]="esClienteVinculado">
+                @if (esClienteVinculado) {
+                  <p class="text-success small mb-2">
+                    <i class="bi bi-check-circle"></i> Datos cargados de tu cuenta.
+                  </p>
+                }
                 
                 <button class="btn btn-success w-100 mt-2" (click)="comprar()">Finalizar Compra</button>
               }
@@ -76,6 +82,7 @@ import { Producto } from '../../core/models/models';
 })
 export class TiendaComponent implements OnInit {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
 
   productos = signal<Producto[]>([]);
   carrito = signal<{producto: Producto, cantidad: number}[]>([]);
@@ -83,9 +90,32 @@ export class TiendaComponent implements OnInit {
   dniCliente = '';
   nombresCliente = '';
   apellidosCliente = '';
+  esClienteVinculado = false;
 
   ngOnInit(): void {
     this.http.get<Producto[]>('/api/productos').subscribe(data => this.productos.set(data));
+
+    // Si el usuario CLIENTE tiene perfil en su sesión, precargar al instante
+    const u = this.auth.usuarioActual();
+    if (u?.nombre || u?.apellidos || u?.dni) {
+      this.dniCliente = u.dni ?? '';
+      this.nombresCliente = u.nombre ?? '';
+      this.apellidosCliente = u.apellidos ?? '';
+      this.esClienteVinculado = true;
+    }
+
+    // Respaldo: si solo conocemos el id, consultar el perfil completo
+    const clienteId = this.auth.clienteId();
+    if (clienteId && !u?.dni) {
+      this.http.get<any>(`/api/clientes/${clienteId}`).subscribe({
+        next: (c) => {
+          this.dniCliente = c?.dni ?? this.dniCliente;
+          this.nombresCliente = c?.nombres ?? this.nombresCliente;
+          this.apellidosCliente = c?.apellidos ?? this.apellidosCliente;
+          this.esClienteVinculado = true;
+        }
+      });
+    }
   }
 
   agregarCarrito(p: Producto) {
@@ -113,6 +143,7 @@ export class TiendaComponent implements OnInit {
     }
 
     const payload = {
+      username: this.auth.usuarioActual()?.username ?? null,
       dni: this.dniCliente,
       nombres: this.nombresCliente,
       apellidos: this.apellidosCliente,

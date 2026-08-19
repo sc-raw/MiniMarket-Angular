@@ -13,6 +13,14 @@ export interface LoginResponse {
   message: string;
   username: string;
   rol: string;
+  // ===== Datos de la persona vinculada (cajero o reponedor) =====
+  // null cuando el usuario es admin o atencion_cliente
+  empleadoId?: number | null;   // cajero.id o reponedor.id
+  nombre?: string | null;       // p.ej. "Juan Carlos"
+  apellidos?: string | null;   // p.ej. "Perez Garcia"
+  // ===== Cliente (rol CLIENTE) =====
+  clienteId?: number | null;   // cliente.id (si ya fue vinculado)
+  dni?: string | null;         // cliente.dni (si ya fue vinculado)
 }
 
 // Roles disponibles en el sistema
@@ -54,6 +62,28 @@ export class AuthService {
 
   estaAutenticado(): boolean {
     return this.usuarioActual() !== null;
+  }
+
+  // Devuelve el nombre completo de la persona (cajero/reponedor) o el username como fallback
+  nombreCompleto(): string {
+    const u = this.usuarioActual();
+    if (!u) return '';
+    if (u.nombre && u.apellidos) {
+      return `${u.nombre} ${u.apellidos}`;
+    }
+    return u.username || '';
+  }
+
+  // Devuelve el empleadoId (cajero.id o reponedor.id) o null
+  empleadoId(): number | null {
+    const u = this.usuarioActual();
+    return u ? (u.empleadoId ?? null) : null;
+  }
+
+  // Devuelve el clienteId (rol CLIENTE) o null
+  clienteId(): number | null {
+    const u = this.usuarioActual();
+    return u ? (u.clienteId ?? null) : null;
   }
 
   // ================= VERIFICACIÓN DE ROLES =================
@@ -139,17 +169,17 @@ export class AuthService {
 
   // ¿Puede ver ventas?
   puedeVerVentas(): boolean {
-    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+    return this.esAdmin() || this.esCajero();
   }
 
   // ¿Puede crear ventas?
   puedeCrearVentas(): boolean {
-    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+    return this.esAdmin() || this.esCajero();
   }
 
   // ¿Puede ver reportes financieros (ventas, totales)?
   puedeVerReportesFinancieros(): boolean {
-    return this.esAdmin() || this.esCajero() || this.esAtencionCliente();
+    return this.esAdmin() || this.esCajero();
   }
 
   // ¿Puede ver reportes de stock (vencidos, stock bajo)?

@@ -100,7 +100,7 @@ public class VentaServiceImpl implements VentaService {
         Venta venta = new Venta();
         venta.setCliente(cliente);
         venta.setCajero(cajero);
-        venta.setEstado("FINALIZADA");
+        venta.setEstado("PENDIENTE");
         venta.setTotal(total);
 
         // 8. GUARDAR VENTA
@@ -167,6 +167,31 @@ public class VentaServiceImpl implements VentaService {
         }
 
         venta.setEstado(nuevoEstado);
+        return ventaRepository.save(venta);
+    }
+
+    @Override
+    @Transactional
+    public Venta confirmarPago(Long id, String metodoPago, BigDecimal montoRecibido) {
+        Venta venta = ventaRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("La venta con ID " + id + " no existe."));
+
+        if (!"PENDIENTE".equals(venta.getEstado())) {
+            throw new RuntimeException("Solo las ventas pendientes pueden confirmar su pago.");
+        }
+
+        if (metodoPago == null || metodoPago.isBlank()) {
+            throw new RuntimeException("Debe indicar el método de pago.");
+        }
+        String metodo = metodoPago.toUpperCase().trim();
+        if (!metodo.equals("EFECTIVO") && !metodo.equals("YAPE")
+                && !metodo.equals("PLIN") && !metodo.equals("SIP")) {
+            throw new RuntimeException("Método de pago no válido: " + metodoPago);
+        }
+
+        venta.setMetodoPago(metodo);
+        venta.setMontoRecibido(montoRecibido != null ? montoRecibido : BigDecimal.ZERO);
+        venta.setEstado("FINALIZADA");
         return ventaRepository.save(venta);
     }
 

@@ -78,6 +78,8 @@ export interface Venta {
   fechaRegistro?: string;
   estado?: string;
   total?: number;
+  metodoPago?: string;
+  montoRecibido?: number;
 }
 
 // DTOs para crear una venta desde el frontend

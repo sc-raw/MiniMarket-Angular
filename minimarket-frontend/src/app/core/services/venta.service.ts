@@ -29,6 +29,13 @@ export class VentaService {
     return this.http.put<Venta>(`${this.baseUrl}/${id}/estado?estado=${estado}`, {});
   }
 
+  confirmarPago(id: number, metodoPago: string, montoRecibido: number): Observable<Venta> {
+    return this.http.post<Venta>(`${this.baseUrl}/${id}/pagar`, {
+      metodoPago,
+      montoRecibido
+    });
+  }
+
   eliminar(id: number): Observable<string> {
     return this.http.delete(`${this.baseUrl}/${id}`, { responseType: 'text' });
   }

@@ -69,8 +69,8 @@ import { CommonModule } from '@angular/common';
                 </li>
               }
 
-              <!-- 📊 Reportes: ADMIN, CAJERO o ATENCION_CLIENTE -->
-              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO']) || auth.esAtencionCliente()) {
+              <!-- 📊 Reportes: ADMIN, CAJERO o REPONEDOR -->
+              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO', 'REPONEDOR'])) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/reportes" routerLinkActive="active">📊 Reportes</a>
                 </li>
@@ -79,9 +79,10 @@ import { CommonModule } from '@angular/common';
               <!-- Dropdown usuario -->
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                  👤 {{ auth.usuarioActual()?.username }}
+                  👤 {{ auth.nombreCompleto() }}
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
+                  <li><span class="dropdown-item-text">Usuario: <strong>{{ auth.usuarioActual()?.username }}</strong></span></li>
                   <li><span class="dropdown-item-text">Rol: <strong>{{ auth.usuarioActual()?.rol }}</strong></span></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
