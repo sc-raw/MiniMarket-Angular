@@ -60,6 +60,7 @@ import { Producto, Categoria } from '../../core/models/models';
                        (ngModelChange)="textoBusqueda.set($event); aplicarFiltros()"
                        name="busqueda">
               </div>
+
               <div class="col-md-6 text-md-end">
                 <div class="btn-group">
                   <button type="button" class="btn"
@@ -77,6 +78,26 @@ import { Producto, Categoria } from '../../core/models/models';
                 </div>
               </div>
             </div>
+
+                                        <!-- NUEVOS BOTONES DE ACCESO RÁPIDO PARA REPONEDOR -->
+              <div class="row mb-3">
+                <div class="col-12">
+                  <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-danger" (click)="filtrarStockBajo()">
+                      <i class="bi bi-exclamation-triangle"></i> Stock Bajo
+                    </button>
+                    <button type="button" class="btn btn-outline-warning text-dark" (click)="filtrarVencidos()">
+                      <i class="bi bi-calendar-x"></i> Vencidos
+                    </button>
+                    <button type="button" class="btn btn-outline-info text-dark" (click)="filtrarPorVencer()">
+                      <i class="bi bi-clock-history"></i> Por Vencer
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="cargar()">
+                      <i class="bi bi-arrow-counterclockwise"></i> Limpiar Filtros Rápidos
+                    </button>
+                  </div>
+                </div>
+              </div>
 
             <table class="table table-hover table-bordered align-middle">
               <thead class="table-dark">
@@ -141,6 +162,14 @@ import { Producto, Categoria } from '../../core/models/models';
                           <button class="btn btn-info btn-sm" (click)="abrirFormularioStock(p)" title="Actualizar Stock">
                             <i class="bi bi-box-seam"></i> Stock
                           </button>
+                          <!-- NUEVO: Botón para alternar el estado (Activo/Inactivo) rápidamente -->
+                          <button class="btn btn-sm ms-4" 
+                                [class.btn-outline-danger]="p.estado" 
+                                [class.btn-outline-success]="!p.estado" 
+                                (click)="cambiarEstadoRapido(p)" 
+                                [title]="p.estado ? 'Desactivar producto' : 'Activar producto'">
+                                <i class="bi" [class.bi-toggle-on]="p.estado" [class.bi-toggle-off]="!p.estado"></i>
+                        </button>
                         }
                       </td>
                     }
@@ -310,7 +339,7 @@ export class ProductosComponent implements OnInit {
     this.categoriaService.listar().subscribe(d => this.categorias.set(d));
   }
 
-  private cargar(): void {
+   cargar(): void {
     this.cargando.set(true);
     this.productoService.listarTodos().subscribe({
       next: (data) => {
@@ -453,5 +482,69 @@ export class ProductosComponent implements OnInit {
     limite.setDate(hoy.getDate() + 7);
     const f = new Date(fecha);
     return f >= hoy && f <= limite;
+  }
+
+    cambiarEstadoRapido(p: Producto): void {
+      const productoActualizado = { ...p, estado: !p.estado };
+      this.productoService.guardar(productoActualizado).subscribe({
+        next: () => {
+          this.mensaje.set(`Estado de ${p.nombre} actualizado correctamente.`);
+          this.cargar();
+        },
+        error: (err) => {
+          this.error.set('Error al cambiar el estado del producto.');
+          console.error(err);
+        }
+      });
+    }
+
+  // ====== FILTROS RÁPIDOS DE REPONEDOR (NUEVOS) ======
+  
+  filtrarStockBajo(): void {
+    this.cargando.set(true);
+    this.productoService.getStockBajo().subscribe({
+      next: (data) => {
+        this.productos.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error.set('Error al cargar stock bajo.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  filtrarVencidos(): void {
+    this.cargando.set(true);
+    this.productoService.getProductosVencidos().subscribe({
+      next: (data) => {
+        this.productos.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error.set('Error al cargar productos vencidos.');
+        this.cargando.set(false);
+      }
+    });
+  }
+
+  filtrarPorVencer(): void {
+    this.cargando.set(true);
+    this.productoService.getProductosPorVencer(7).subscribe({
+      next: (data) => {
+        this.productos.set(data);
+        this.aplicarFiltros();
+        this.cargando.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        this.error.set('Error al cargar productos por vencer.');
+        this.cargando.set(false);
+      }
+    });
   }
 }

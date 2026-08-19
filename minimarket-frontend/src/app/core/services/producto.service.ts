@@ -31,4 +31,16 @@ export class ProductoService {
   actualizarStock(id: number, stock: number): Observable<Producto> {
     return this.http.patch<Producto>(`${this.baseUrl}/${id}/stock?stock=${stock}`, {});
   }
+  
+  getStockBajo(): Observable<Producto[]> {
+  return this.http.get<Producto[]>('/api/reportes/stock-bajo');
+}
+
+getProductosVencidos(): Observable<Producto[]> {
+  return this.http.get<Producto[]>('/api/reportes/productos-vencidos');
+}
+
+getProductosPorVencer(dias: number = 7): Observable<Producto[]> {
+  return this.http.get<Producto[]>(`/api/reportes/productos-por-vencer?dias=${dias}`);
+}
 }
