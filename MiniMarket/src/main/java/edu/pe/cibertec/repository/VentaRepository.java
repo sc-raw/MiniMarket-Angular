@@ -20,6 +20,9 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     @Query("SELECT v.estado, COUNT(v) FROM Venta v GROUP BY v.estado")
     List<Object[]> contarPorEstado();
 
+    // Conteo de ventas por un estado específico (e.g. FINALIZADA)
+    long countByEstado(String estado);
+
     // Ventas entre dos fechas
     @Query("SELECT v FROM Venta v WHERE v.fechaRegistro BETWEEN :inicio AND :fin ORDER BY v.fechaRegistro DESC")
     List<Venta> ventasEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);

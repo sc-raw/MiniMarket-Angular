@@ -34,7 +34,7 @@ public class ReportesRestController {
     public Map<String, Object> resumen() {
         Map<String, Object> resumen = new HashMap<>();
         BigDecimal total = ventaRepository.totalVentasFinalizadas();
-        long cantidadVentas = ventaRepository.count();
+        long cantidadVentas = ventaRepository.countByEstado("FINALIZADA");
         long cantidadProductos = productoRepository.count();
         List<?> stockBajo = productoRepository.findByStockLessThanEqual(5);
         LocalDate hoy = LocalDate.now();

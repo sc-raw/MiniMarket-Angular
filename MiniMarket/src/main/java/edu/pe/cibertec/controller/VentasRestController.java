@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.*;
 import edu.pe.cibertec.dto.ConfirmarPagoRequest;
 import edu.pe.cibertec.dto.CrearVentaRequest;
 import edu.pe.cibertec.dto.VentaWebDTO;
+import edu.pe.cibertec.entity.Cajero;
 import edu.pe.cibertec.entity.Cliente;
 import edu.pe.cibertec.entity.Usuario;
 import edu.pe.cibertec.entity.Venta;
 import edu.pe.cibertec.repository.ClienteRepository;
 import edu.pe.cibertec.repository.UsuarioRepository;
 import edu.pe.cibertec.repository.VentaRepository;
+import edu.pe.cibertec.service.EmpleadoService;
 import edu.pe.cibertec.service.VentaService;
 
 @RestController
@@ -38,6 +40,9 @@ public class VentasRestController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmpleadoService empleadoService;
 
     // ---------- VENTAS POR DNI (historial del cliente) ----------
     @GetMapping("/cliente/{dni}")
@@ -75,12 +80,16 @@ public class VentasRestController {
                 }
             }
 
-            // 3. Crear la venta asignada al cajero por defecto (ID 1).
+            // 3. Crear la venta asignada al primer cajero activo.
             //    🔥 La venta queda en estado PENDIENTE - el cajero debe aprobarla
             //       y cobrar desde /ventas antes de que pase a FINALIZADA.
+            List<Cajero> cajerosActivos = empleadoService.listarCajerosActivos();
+            if (cajerosActivos.isEmpty()) {
+                return ResponseEntity.badRequest().body("No hay cajeros activos para registrar la venta.");
+            }
             CrearVentaRequest request = new CrearVentaRequest();
             request.setClienteId(cliente.getId());
-            request.setCajeroId(1L);
+            request.setCajeroId(cajerosActivos.get(0).getId());
             request.setProductos(dto.getProductos());
 
             Venta venta = ventaService.crearVenta(request);

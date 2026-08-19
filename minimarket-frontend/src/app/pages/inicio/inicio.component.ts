@@ -1,6 +1,7 @@
 // inicio.component.ts
 import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
 import { ReporteService, ResumenReporte } from '../../core/services/reporte.service';
 import { CommonModule } from '@angular/common';
@@ -225,6 +226,7 @@ import { CommonModule } from '@angular/common';
 export class InicioComponent implements OnInit {
   protected auth = inject(AuthService);
   private reporteService = inject(ReporteService);
+  private http = inject(HttpClient);
 
   ventasHoy = signal(0);
   stockBajo = signal(0);
@@ -235,9 +237,14 @@ export class InicioComponent implements OnInit {
     if (this.auth.estaAutenticado() && this.auth.esAdmin()) {
       this.reporteService.resumen().subscribe({
         next: (data) => {
+          this.ventasHoy.set(data.cantidadVentas ?? 0);
           this.stockBajo.set(data.cantidadStockBajo ?? 0);
           this.totalProductos.set(data.cantidadProductos ?? 0);
         },
+        error: () => {}
+      });
+      this.http.get<any[]>('/api/clientes').subscribe({
+        next: (clientes) => this.totalClientes.set(clientes?.length ?? 0),
         error: () => {}
       });
     }
