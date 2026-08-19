@@ -63,7 +63,7 @@ import { CommonModule } from '@angular/common';
               }
 
               <!-- 🛒 Ventas: ADMIN, CAJERO o REPONEDOR -->
-              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO', 'REPONEDOR'])) {
+              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO'])) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/ventas" routerLinkActive="active">🛒 Ventas</a>
                 </li>
