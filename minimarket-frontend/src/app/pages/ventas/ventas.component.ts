@@ -76,6 +76,11 @@ interface LineaDetalle {
                       }
                     </td>
                     <td class="text-center">
+                      @if (v.estado === 'PENDIENTE') {
+                        <button class="btn btn-sm btn-success me-1" (click)="abrirCobroPendiente(v)" title="Cobrar">
+                          <i class="bi bi-cash-coin"></i> Cobrar
+                        </button>
+                      }
                       @if (v.estado === 'FINALIZADA' || v.estado === 'COMPLETADO' || v.estado === 'PENDIENTE') {
                         <button class="btn btn-sm btn-danger me-1" (click)="anularVenta(v.id!)" title="Anular">
                           <i class="bi bi-x-circle"></i>
@@ -500,6 +505,146 @@ interface LineaDetalle {
           </div>
         </div>
       }
+
+      <!-- ===== MODAL COBRO DE VENTA PENDIENTE (cliente compró en /tienda) ===== -->
+      @if (mostrarModalCobroPendiente()) {
+        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.6); z-index:1050;">
+          <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content shadow-lg" style="border-radius: 20px;">
+              <div class="modal-header text-white"
+                   style="background: linear-gradient(135deg, #1565C0, #2E7D32); border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title fw-bold">
+                  <i class="bi bi-cash-coin me-2"></i> Cobrar venta #{{ ventaACobrar()?.id }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="cerrarModalCobroPendiente()"></button>
+              </div>
+              <div class="modal-body py-4">
+
+                <!-- Info de la venta -->
+                @if (ventaACobrar(); as v) {
+                  <div class="mb-3 p-3 bg-light rounded-3">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Cliente:</span>
+                      <strong>{{ v.cliente?.nombres }} {{ v.cliente?.apellidos }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">DNI:</span>
+                      <span>{{ v.cliente?.dni || '—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Productos:</span>
+                      <span>{{ v.detalles?.length || '?' }} ítem(s)</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-4 p-3 bg-success bg-opacity-10 rounded-3 text-center">
+                    <h4 class="mb-0">
+                      Total a cobrar: <span class="text-success fw-bold">S/. {{ v.total }}</span>
+                    </h4>
+                  </div>
+
+                  @if (!tipoPagoCobro()) {
+                    <div class="row g-3 justify-content-center">
+                      <div class="col-5">
+                        <button class="btn btn-success w-100 py-4" (click)="seleccionarCobro('EFECTIVO')"
+                                style="border-radius: 15px;">
+                          <div class="d-flex flex-column align-items-center">
+                            <i class="bi bi-cash-coin" style="font-size: 3rem;"></i>
+                            <strong class="mt-2">Efectivo</strong>
+                          </div>
+                        </button>
+                      </div>
+                      <div class="col-5">
+                        <button class="btn btn-primary w-100 py-4" (click)="seleccionarCobro('QR')"
+                                style="border-radius: 15px;">
+                          <div class="d-flex flex-column align-items-center">
+                            <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
+                            <strong class="mt-2">Pago con QR</strong>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- EFECTIVO -->
+                  @if (tipoPagoCobro() === 'EFECTIVO') {
+                    <div class="mt-3">
+                      <label class="form-label fw-bold">Monto recibido</label>
+                      <input type="number" class="form-control form-control-lg text-end"
+                             [(ngModel)]="montoRecibidoCobro" min="0" step="0.01" placeholder="0.00">
+                      @if (montoRecibidoCobro > 0) {
+                        <div class="mt-2 p-2 bg-light rounded">
+                          <div class="d-flex justify-content-between">
+                            <span>Total:</span><span>S/. {{ v.total }}</span>
+                          </div>
+                          <div class="d-flex justify-content-between fw-bold text-success">
+                            <span>Vuelto:</span><span>S/. {{ vueltoCobro(v.total) }}</span>
+                          </div>
+                        </div>
+                      }
+                      <button class="btn btn-success btn-lg mt-3 px-5 fw-bold"
+                              (click)="confirmarCobroPendiente()"
+                              [disabled]="procesandoCobro || montoRecibidoCobro < (v.total ?? 0)"
+                              style="border-radius: 50px;">
+                        <i class="bi bi-check-circle me-2"></i> Confirmar pago
+                      </button>
+                      <button class="btn btn-outline-secondary mt-2 px-4" (click)="tipoPagoCobro.set(null)">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                      </button>
+                    </div>
+                  }
+
+                  <!-- QR -->
+                  @if (tipoPagoCobro() === 'QR') {
+                    <div class="mt-3 text-center">
+                      <h5 class="mb-3">Selecciona el servicio</h5>
+                      <div class="btn-group w-100 mb-3" role="group">
+                        <input type="radio" class="btn-check" name="metodoQRCobro" id="yapeCobro"
+                               [(ngModel)]="metodoQRCobro" value="YAPE">
+                        <label class="btn fw-bold py-2" for="yapeCobro"
+                               style="color:#7B1FA2; border:2px solid #7B1FA2;">Yape</label>
+
+                        <input type="radio" class="btn-check" name="metodoQRCobro" id="plinCobro"
+                               [(ngModel)]="metodoQRCobro" value="PLIN">
+                        <label class="btn fw-bold py-2" for="plinCobro"
+                               style="color:#197687; border:2px solid #198754;">Plin</label>
+
+                        <input type="radio" class="btn-check" name="metodoQRCobro" id="sipCobro"
+                               [(ngModel)]="metodoQRCobro" value="SIP">
+                        <label class="btn fw-bold py-2" for="sipCobro"
+                               style="color:#0dcaf0; border:2px solid #0dcaf0;">SIP</label>
+                      </div>
+
+                      <div class="p-3 bg-white d-inline-block rounded-3 shadow-sm"
+                           style="border: 3px solid #2E7D32;">
+                        <img [src]="getQrImageForCobro()" [alt]="'QR ' + metodoQRCobro"
+                             class="img-fluid" style="width: 200px; border-radius: 15px;">
+                      </div>
+
+                      <button class="btn btn-success btn-lg mt-3 px-5 fw-bold"
+                              (click)="confirmarCobroPendiente()"
+                              [disabled]="procesandoCobro"
+                              style="border-radius: 50px;">
+                        <i class="bi bi-check-circle me-2"></i> ✅ Confirmar pago
+                      </button>
+                      <button class="btn btn-outline-secondary mt-2 px-4" (click)="tipoPagoCobro.set(null)">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                      </button>
+                    </div>
+                  }
+
+                  @if (procesandoCobro) {
+                    <div class="text-center mt-3">
+                      <div class="spinner-border text-success" role="status"></div>
+                      <p class="mt-2 text-muted">Procesando pago...</p>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -542,6 +687,14 @@ export class VentasComponent implements OnInit {
   procesandoPago = signal(false);
   ventaConfirmada = signal<Venta | null>(null);
   metodoPagoEnCurso = signal('');
+
+  // ===== ESTADO: Cobro de venta pendiente (cliente compró en /tienda) =====
+  mostrarModalCobroPendiente = signal(false);
+  ventaACobrar = signal<Venta | null>(null);
+  tipoPagoCobro = signal<string | null>(null);
+  metodoQRCobro = 'YAPE';
+  montoRecibidoCobro = 0;
+  procesandoCobro = false;
 
   vuelto = computed(() => {
     const total = this.calcularTotal();
@@ -891,6 +1044,91 @@ export class VentasComponent implements OnInit {
     this.abrirFormulario();
   }
 
+  // ========== COBRO DE VENTA PENDIENTE (cliente compró en /tienda) ==========
+  abrirCobroPendiente(v: Venta): void {
+    this.ventaACobrar.set(v);
+    this.tipoPagoCobro.set(null);
+    this.metodoQRCobro = 'YAPE';
+    this.montoRecibidoCobro = 0;
+    this.procesandoCobro = false;
+    this.mostrarModalCobroPendiente.set(true);
+
+    // Si la venta no tiene detalles cargados, los buscamos para mostrar info
+    if (!v.detalles || v.detalles.length === 0) {
+      this.ventaService.buscarPorId(v.id!).subscribe({
+        next: (ventaFull) => {
+          if (ventaFull) this.ventaACobrar.set(ventaFull);
+        },
+        error: () => {}
+      });
+    }
+  }
+
+  cerrarModalCobroPendiente(): void {
+    this.mostrarModalCobroPendiente.set(false);
+    this.ventaACobrar.set(null);
+    this.tipoPagoCobro.set(null);
+    this.procesandoCobro = false;
+  }
+
+  seleccionarCobro(tipo: string): void {
+    this.tipoPagoCobro.set(tipo);
+    this.montoRecibidoCobro = 0;
+  }
+
+  vueltoCobro(total: number | undefined): number {
+    const t = total ?? 0;
+    return Math.max(0, Math.round((this.montoRecibidoCobro - t) * 100) / 100);
+  }
+
+  getQrImageForCobro(): string {
+    const images: Record<string, string> = {
+      YAPE: '/assets/images/qr-yape.jpg',
+      PLIN: '/assets/images/qr-plin.jpg',
+      SIP:  '/assets/images/qr-sip.jpg'
+    };
+    return images[this.metodoQRCobro] || images['YAPE'];
+  }
+
+  confirmarCobroPendiente(): void {
+    const v = this.ventaACobrar();
+    if (!v || !v.id) return;
+    const tipo = this.tipoPagoCobro();
+    if (!tipo) return;
+
+    const metodoPago = tipo === 'EFECTIVO' ? 'EFECTIVO' : this.metodoQRCobro;
+    const monto = tipo === 'EFECTIVO' ? this.montoRecibidoCobro : 0;
+
+    this.procesandoCobro = true;
+    // 🔥 Simular procesamiento de pago (1.5s)
+    setTimeout(() => {
+      this.ventaService.confirmarPago(v.id!, metodoPago, monto).subscribe({
+        next: (ventaFinal) => {
+          this.procesandoCobro = false;
+          this.cerrarModalCobroPendiente();
+          this.mensaje.set(`✅ Venta #${ventaFinal.id} cobrada y finalizada (${metodoPago}).`);
+          this.ventaService.listar().subscribe({
+            next: (data) => this.ventas.set(data),
+            error: (err) => console.error(err)
+          });
+
+          // Preguntar si quiere imprimir boleta
+          setTimeout(() => {
+            if (confirm(`¿Imprimir boleta de la venta #${ventaFinal.id}?`)) {
+              this.imprimirBoleta(ventaFinal);
+            }
+          }, 300);
+        },
+        error: (err) => {
+          this.procesandoCobro = false;
+          const msg = err.error?.mensaje || err.error?.message || err.error || err.message;
+          this.error.set(typeof msg === 'string' ? msg : 'Error al confirmar el pago');
+          console.error('Error al cobrar venta pendiente:', err);
+        }
+      });
+    }, 1500);
+  }
+
   // ========== ANULAR VENTA ==========
   anularVenta(id: number): void {
     if (!confirm('¿Estás seguro de anular esta venta? Se devolverá el stock.')) return;
@@ -923,13 +1161,9 @@ export class VentasComponent implements OnInit {
     const total = v.total ?? 0;
     const vuelto = Math.round((montoRecibido - total) * 100) / 100;
 
-    const win = window.open('', '_blank', 'width=400,height=600');
-    if (!win) {
-      this.error.set('El navegador bloqueó la apertura de la ventana de boleta. Permití pop-ups.');
-      return;
-    }
-
-    win.document.write(`
+    // 🔥 FIX about:blank: usar Blob URL en vez de window.open('', '_blank')
+    // Esto garantiza que el popup tenga una URL real y el script se ejecute.
+    const html = `
       <!DOCTYPE html>
       <html lang="es">
       <head>
@@ -946,9 +1180,7 @@ export class VentasComponent implements OnInit {
           .footer { text-align: center; font-size: 10px; margin-top: 12px; color: #555; }
           .header-logo { text-align: center; margin-bottom: 8px; font-size: 24px; }
           .estado-badge { display: inline-block; padding: 2px 8px; border: 1px solid #000; border-radius: 3px; font-size: 10px; }
-          @media print {
-            body { width: auto; padding: 0; }
-          }
+          @media print { body { width: auto; padding: 0; } }
         </style>
       </head>
       <body>
@@ -979,11 +1211,23 @@ export class VentasComponent implements OnInit {
           ${new Date().toLocaleString('es-PE')}
         </div>
         <script>
-          window.onload = function() { window.print(); };
-        </script>
+          // 🔥 setTimeout asegura que el DOM ya está pintado antes de invocar print()
+          setTimeout(function(){ window.print(); }, 200);
+        </scr` + `ipt>
       </body>
       </html>
-    `);
-    win.document.close();
+    `;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank', 'width=420,height=640');
+    if (!win) {
+      this.error.set('El navegador bloqueó la apertura de la boleta. Permití pop-ups en el navegador.');
+      // Cleanup aunque fallen
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return;
+    }
+    // Limpiar el blob URL después de 10 segundos (suficiente para imprimir)
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 }

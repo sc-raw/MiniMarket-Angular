@@ -73,6 +73,30 @@ import { CommonModule } from '@angular/common';
         <!-- ===== TARJETAS DE ACCESO CENTRADAS ===== -->
         <div class="row g-3 justify-content-center">
 
+          <!-- 🔥 CLIENTE: Tienda + Mis Pedidos -->
+          @if (auth.esCliente()) {
+            <div class="col-lg-3 col-md-6">
+              <div class="card h-100 shadow-sm text-center border-0">
+                <div class="card-body d-flex flex-column">
+                  <div class="display-1">🛒</div>
+                  <h5 class="fw-bold">Tienda</h5>
+                  <p class="text-muted small">Compra productos online</p>
+                  <a class="btn btn-success mt-auto" routerLink="/tienda">Comprar</a>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="card h-100 shadow-sm text-center border-0">
+                <div class="card-body d-flex flex-column">
+                  <div class="display-1">📦</div>
+                  <h5 class="fw-bold">Mis Pedidos</h5>
+                  <p class="text-muted small">Historial de compras</p>
+                  <a class="btn btn-success mt-auto" routerLink="/mis-pedidos">Ver pedidos</a>
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- ATENCIÓN AL CLIENTE -->
           @if (auth.esAtencionCliente()) {
             <div class="col-12">

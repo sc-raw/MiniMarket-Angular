@@ -27,6 +27,16 @@ import { CommonModule } from '@angular/common';
             
             @if (auth.estaAutenticado()) {
 
+              <!-- 🔥 CLIENTE: links a Tienda y Mis Pedidos -->
+              @if (auth.esCliente()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/tienda" routerLinkActive="active">🛒 Tienda</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/mis-pedidos" routerLinkActive="active">📦 Mis Pedidos</a>
+                </li>
+              }
+
               <!-- 🔥 ATENCIÓN AL CLIENTE -->
               @if (auth.esAtencionCliente()) {
                 <li class="nav-item">

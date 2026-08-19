@@ -75,15 +75,16 @@ public class VentasRestController {
                 }
             }
 
-            // 3. Crear la venta asignada a un cajero por defecto (ej. ID 1, el admin)
+            // 3. Crear la venta asignada al cajero por defecto (ID 1).
+            //    🔥 La venta queda en estado PENDIENTE - el cajero debe aprobarla
+            //       y cobrar desde /ventas antes de que pase a FINALIZADA.
             CrearVentaRequest request = new CrearVentaRequest();
             request.setClienteId(cliente.getId());
-            request.setCajeroId(1L); // Asumimos que el cajero/admin con ID 1 existe
+            request.setCajeroId(1L);
             request.setProductos(dto.getProductos());
 
             Venta venta = ventaService.crearVenta(request);
-            // La compra online se considera pagada de inmediato (sin simulación)
-            venta = ventaService.confirmarPago(venta.getId(), "EFECTIVO", venta.getTotal());
+            // 🔥 NO se llama a confirmarPago() aquí. El cajero lo hará desde /ventas.
             return ResponseEntity.ok(venta);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error en venta web: " + e.getMessage());
@@ -123,6 +124,7 @@ public class VentasRestController {
     }
 
     // ---------- CONFIRMAR PAGO (simulación de pago en POS) ----------
+    // Lo llama el cajero desde /ventas cuando aprueba una venta PENDIENTE.
     @PostMapping("/{id}/pagar")
     public ResponseEntity<?> confirmarPago(@PathVariable Long id,
                                            @RequestBody ConfirmarPagoRequest pago) {

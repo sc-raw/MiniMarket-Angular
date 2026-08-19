@@ -65,6 +65,7 @@ export interface ReponedorUsuarioDTO {
 export interface DetalleVenta {
   id?: number;
   venta?: Venta;
+  productoId?: number;
   producto: Producto | null;
   cantidad: number;
   precio: number;
@@ -80,6 +81,7 @@ export interface Venta {
   total?: number;
   metodoPago?: string;
   montoRecibido?: number;
+  detalles?: DetalleVenta[];   // 🔥 Para mostrar items en cobro y mis-pedidos
 }
 
 // DTOs para crear una venta desde el frontend
