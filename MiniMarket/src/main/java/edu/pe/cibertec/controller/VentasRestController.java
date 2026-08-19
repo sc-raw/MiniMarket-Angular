@@ -1,6 +1,8 @@
 package edu.pe.cibertec.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,13 +51,18 @@ public class VentasRestController {
         }
     }
 
+ // VentasRestController.java
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarVenta(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> eliminarVenta(@PathVariable Long id) {
         try {
             ventaService.eliminar(id);
-            return ResponseEntity.ok("Venta cancelada correctamente.");
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Venta cancelada correctamente.");
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         }
     }
 }

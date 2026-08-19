@@ -20,8 +20,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> findByStockLessThanEqual(Integer stock);
 
     // Top productos más vendidos (por cantidad)
-    @Query("SELECT d.producto.nombre, SUM(d.cantidad) FROM DetalleVenta d GROUP BY d.producto.id ORDER BY SUM(d.cantidad) DESC")
-    List<Object[]> topProductosVendidos();
+    @Query("SELECT p.nombre, SUM(d.cantidad) FROM DetalleVenta d " +
+    	       "JOIN d.producto p " +
+    	       "JOIN d.venta v " +
+    	       "WHERE v.estado != 'CANCELADA' " +
+    	       "GROUP BY p.id, p.nombre " +
+    	       "ORDER BY SUM(d.cantidad) DESC " +
+    	       "LIMIT 10")
+    	List<Object[]> topProductosVendidos();
 
     // Productos ya vencidos (fechaVencimiento < hoy)
     @Query("SELECT p FROM Producto p WHERE p.fechaVencimiento IS NOT NULL AND p.fechaVencimiento < :hoy ORDER BY p.fechaVencimiento ASC")

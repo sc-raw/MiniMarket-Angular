@@ -66,28 +66,23 @@ interface LineaDetalle {
                     <td class="text-end fw-bold">S/. {{ v.total }}</td>
                     <td class="text-center">
                       @switch (v.estado) {
-                        @case ('PENDIENTE') { <span class="badge bg-warning text-dark">⏳ Pendiente</span> }
-                        @case ('EN_PROCESO') { <span class="badge bg-info text-dark">🔄 En Proceso</span> }
-                        @case ('FINALIZADA') { <span class="badge bg-success">✅ Finalizada</span> }
+                        @case ('COMPLETADO') { <span class="badge bg-success">✅ Completado</span> }
                         @case ('CANCELADA') { <span class="badge bg-danger">❌ Cancelada</span> }
                         @default { <span class="badge bg-secondary">{{ v.estado }}</span> }
                       }
                     </td>
+
                     <td class="text-center">
-                      @if (v.estado === 'PENDIENTE') {
-                        <button class="btn btn-sm btn-primary me-1" (click)="cambiarEstado(v.id!, 'EN_PROCESO')" title="Iniciar">
-                          <i class="bi bi-play-fill"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" (click)="cambiarEstado(v.id!, 'CANCELADA')" title="Cancelar">
-                          <i class="bi bi-x-circle"></i>
-                        </button>
-                      }
-                      @if (v.estado === 'EN_PROCESO') {
-                        <button class="btn btn-sm btn-success" (click)="cambiarEstado(v.id!, 'FINALIZADA')" title="Finalizar">
-                          <i class="bi bi-check2-all"></i>
-                        </button>
-                      }
-                    </td>
+      @if (v.estado === 'COMPLETADO' || v.estado === 'PENDIENTE') {
+        <button class="btn btn-sm btn-danger" (click)="anularVenta(v.id!)" title="Anular">
+          <i class="bi bi-x-circle"></i> Anular
+        </button>
+      }
+      @if (v.estado === 'CANCELADA') {
+        <span class="badge bg-secondary">Anulada</span>
+      }
+    </td>
+    
                   </tr>
                 } @empty {
                   <tr><td colspan="7" class="text-center text-muted py-4">
@@ -126,31 +121,58 @@ interface LineaDetalle {
                       <select class="form-select" [(ngModel)]="nuevaVenta.cajeroId" name="cajeroId" required>
                         <option [ngValue]="0">Seleccione...</option>
                         @for (c of cajeros(); track c.id) {
-                          <option [ngValue]="c.id">{{ c.dni }} - {{ c.nombres }} {{ c.apellidos }} ({{ c.turno }})</option>
+                          <option [ngValue]="c.id">{{ c.nombres }}</option>
                         }
                       </select>
                     </div>
                   </div>
 
+                  <!-- Productos a vender -->
                   <hr>
                   <h6 class="fw-bold mb-3"><i class="bi bi-list-check"></i> Productos a vender</h6>
 
                   @for (linea of lineasDetalle(); track $index; let i = $index) {
-                    <div class="row mb-2">
-                      <div class="col-md-7">
+                    <div class="row mb-2 align-items-end">
+                      <!-- Producto -->
+                      <div class="col-md-4">
+                        <label class="form-label fw-bold small">Producto</label>
                         <select class="form-select" [(ngModel)]="linea.productoId" [name]="'producto' + i" required>
                           <option [ngValue]="null">Seleccione producto...</option>
                           @for (p of productos(); track p.idProducto) {
                             <option [ngValue]="p.idProducto">
-                              {{ p.codigo }} - {{ p.nombre }} (S/. {{ p.precio }}) - Stock: {{ p.stock }}
+                              {{ p.codigo }} - {{ p.nombre }}
                             </option>
                           }
                         </select>
                       </div>
-                      <div class="col-md-3">
-                        <input type="number" class="form-control" [(ngModel)]="linea.cantidad"
-                               [name]="'cantidad' + i" min="1" value="1" required>
+
+                      <!-- Stock (automático) -->
+                      <div class="col-md-2">
+                        <label class="form-label fw-bold small">Stock</label>
+                        <input type="text" class="form-control" 
+                              [value]="obtenerStock(linea.productoId)" 
+                              readonly disabled>
                       </div>
+
+
+                      <!-- Precio (automático) -->
+                      <div class="col-md-2">
+                        <label class="form-label fw-bold small">Precio (S/.)</label>
+                        <input type="text" class="form-control" 
+                              [value]="obtenerPrecio(linea.productoId)" 
+                              readonly disabled>
+                      </div>
+
+                      <!-- Cantidad -->
+                      <div class="col-md-2">
+                        <label class="form-label fw-bold small">Cantidad</label>
+                        <input type="number" class="form-control" [(ngModel)]="linea.cantidad"
+                              [name]="'cantidad' + i" min="1" value="1" required>
+                      </div>
+
+
+
+                      <!-- Eliminar -->
                       <div class="col-md-2">
                         <button type="button" class="btn btn-danger btn-sm w-100" (click)="eliminarLinea(i)"
                                 [disabled]="lineasDetalle().length === 1">
@@ -215,7 +237,7 @@ interface LineaDetalle {
                               style="border-radius: 15px; transition: all 0.3s;">
                         <div class="d-flex flex-column align-items-center">
                           <i class="bi bi-cash-coin" style="font-size: 3rem;"></i>
-                          <strong class="mt-2">💰 Efectivo</strong>
+                          <strong class="mt-2">Efectivo</strong>
                         </div>
                       </button>
                     </div>
@@ -226,7 +248,7 @@ interface LineaDetalle {
                               style="border-radius: 15px; transition: all 0.3s;">
                         <div class="d-flex flex-column align-items-center">
                           <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
-                          <strong class="mt-2">📱 Pago con QR</strong>
+                          <strong class="mt-2">Pago con QR</strong>
                         </div>
                       </button>
                     </div>
@@ -237,50 +259,51 @@ interface LineaDetalle {
                 @if (mostrarQR()) {
                   <div class="mt-4 pt-3 border-top">
                     <h5 class="mb-3 text-primary">
-                      <i class="bi bi-qr-code me-2"></i> Escanea el QR para pagar
+                      <i></i> Selecciona el servicio
                     </h5>
                     
                     <!-- Selector de método QR -->
                     <div class="mb-4">
                       <div class="btn-group w-100" role="group" style="border-radius: 10px; overflow: hidden;">
-                        <input type="radio" class="btn-check" name="metodoQR" id="yape" 
-                               [ngModel]="metodoQR()" (ngModelChange)="metodoQR.set('YAPE')" value="YAPE">
-                        <label class="btn btn-outline-primary fw-bold py-2" for="yape" 
-                               style="transition: all 0.3s;">
-                          <i class="bi bi-phone me-1"></i> Yape
-                        </label>
+                        <!-- Yape: Morado -->
+                          <input type="radio" class="btn-check" name="metodoQR" id="yape"
+                                [ngModel]="metodoQR()" (ngModelChange)="metodoQR.set('YAPE')" value="YAPE">
+                          <label class="btn fw-bold py-2" for="yape"
+                                style="color: #7B1FA2; border: 2px solid #7B1FA2; background: transparent; transition: all 0.3s;">
+                            <i></i> Yape
+                          </label>
+
+                          <!-- Plin: Verde -->
+                          <input type="radio" class="btn-check" name="metodoQR" id="plin" 
+                                [ngModel]="metodoQR()" (ngModelChange)="metodoQR.set('PLIN')" value="PLIN">
+                          <label class="btn fw-bold py-2" for="plin" 
+                                style="color: #197687; border: 2px solid #198754; background: transparent; transition: all 0.3s;">
+                            <i></i> Plin
+                          </label>
+
+                          <!-- SIP: Celeste -->
+                          <input type="radio" class="btn-check" name="metodoQR" id="sip" 
+                                [ngModel]="metodoQR()" (ngModelChange)="metodoQR.set('SIP')" value="SIP">
+                          <label class="btn fw-bold py-2" for="sip"
+                                style="color: #0dcaf0; border: 2px solid #0dcaf0; background: transparent; transition: all 0.3s;">
+                            <i></i> SIP
+                          </label>
+
                         
-                        <input type="radio" class="btn-check" name="metodoQR" id="plin" 
-                               [ngModel]="metodoQR()" (ngModelChange)="metodoQR.set('PLIN')" value="PLIN">
-                        <label class="btn btn-outline-info fw-bold py-2" for="plin" 
-                               style="transition: all 0.3s;">
-                          <i class="bi bi-phone me-1"></i> Plin
-                        </label>
                       </div>
                     </div>
 
                     <!-- QR -->
                     <div class="qr-container p-4 bg-white d-inline-block rounded-3 shadow-sm mx-auto" 
                          style="border: 3px solid #2E7D32;">
-                      <div class="text-center mb-2">
-                        <span class="badge" 
-                              [class.bg-primary]="metodoQR() === 'YAPE'"
-                              [class.bg-info]="metodoQR() === 'PLIN'"
-                              style="font-size: 1rem; padding: 5px 20px;">
-                          {{ metodoQR() }}
-                        </span>
-                      </div>
-                      
+
                       <img 
                         [src]="getQrImage()" 
                         [alt]="'QR ' + metodoQR()"
                         class="img-fluid" 
-                        style="max-width: 200px; max-height: 200px;"
-                      >
-                      
-                      <div class="text-center mt-3">
-                        <h4 class="text-success fw-bold">S/. {{ calcularTotal() }}</h4>
-                      </div>
+                        style="width: 60%; border-radius: 15px;"
+                    >
+                    
                     </div>
 
                     <div class="mt-3">
@@ -309,7 +332,7 @@ interface LineaDetalle {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .qr-container {
       background: white;
       border-radius: 15px;
@@ -321,13 +344,20 @@ interface LineaDetalle {
       align-items: center;
       min-height: calc(100% - 1rem);
     }
-    .btn-check:checked + .btn-outline-primary {
-      background-color: #0d6efd;
-      color: white;
+    .btn-check:checked + .btn {
+      color: white !important;
     }
-    .btn-check:checked + .btn-outline-info {
-      background-color: #0dcaf0;
-      color: white;
+    .btn-check:checked + .btn[style*="#7B1FA2"] {
+      background-color: #7B1FA2 !important;
+      border-color: #7B1FA2 !important;
+    }
+    .btn-check:checked + .btn[style*="#198754"] {
+      background-color: #198754 !important;
+      border-color: #198754 !important;
+    }
+    .btn-check:checked + .btn[style*="#0dcaf0"] {
+      background-color: #0dcaf0 !important;
+      border-color: #0dcaf0 !important;
     }
   `]
 })
@@ -360,8 +390,9 @@ export class VentasComponent implements OnInit {
 
   // ========== QR IMAGES ==========
   qrImages = {
-    YAPE: 'assets/images/qr-yape.jpg',
-    PLIN: 'assets/images/qr-plin.jpg'
+    YAPE: '/assets/images/qr-yape.jpg',
+    PLIN: '/assets/images/qr-plin.jpg',
+    SIP: '/assets/images/qr-sip.jpg'
   };
 
   // ========== LIFECYCLE ==========
@@ -533,6 +564,43 @@ export class VentasComponent implements OnInit {
       }
     });
   }
+
+
+  // ========== ANULAR VENTA ==========
+  anularVenta(id: number): void {
+    if (!confirm('¿Estás seguro de anular esta venta? Se devolverá el stock.')) return;
+    
+    this.ventaService.anular(id).subscribe({
+      next: () => {
+        this.mensaje.set('✅ Venta anulada correctamente. Stock devuelto.');
+        this.ventaService.listar().subscribe({
+          next: (data) => this.ventas.set(data),
+          error: (err) => console.error(err)
+        });
+      },
+      error: (err) => {
+        const msg = err.error?.message || err.error || err.message || 'Error al anular la venta';
+        this.error.set(typeof msg === 'string' ? msg : 'Error al anular la venta');
+        console.error('Error al anular:', err);
+      }
+    });
+  }
+
+
+
+  // ========== OBTENER PRECIO ==========
+obtenerPrecio(productoId: number | null): string {
+  if (!productoId) return '';
+  const producto = this.productos().find(p => p.idProducto === productoId);
+  return producto ? producto.precio.toFixed(2) : '';
+}
+
+// ========== OBTENER STOCK ==========
+obtenerStock(productoId: number | null): string {
+  if (!productoId) return '';
+  const producto = this.productos().find(p => p.idProducto === productoId);
+  return producto ? (producto.stock ?? 0).toString() : '';
+}
 
   // ========== CAMBIAR ESTADO ==========
   cambiarEstado(idVenta: number, nuevoEstado: string): void {

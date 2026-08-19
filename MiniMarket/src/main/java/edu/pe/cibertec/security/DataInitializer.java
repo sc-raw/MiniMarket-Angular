@@ -66,7 +66,7 @@ public class DataInitializer implements CommandLineRunner {
         c1.setNombres("Juan Carlos");
         c1.setApellidos("Perez Garcia");
         c1.setTelefono("987654321");
-        c1.setCorreo("juan.perez&#64;gmail.com");
+        c1.setCorreo("juan.perez@gmail.com");
         c1.setDireccion("Av. Lima 123");
         c1.setEstado(true);
         c1.setFechaIngreso(LocalDate.now());
@@ -80,7 +80,7 @@ public class DataInitializer implements CommandLineRunner {
         c2.setNombres("Maria Fernanda");
         c2.setApellidos("Lopez Diaz");
         c2.setTelefono("987123456");
-        c2.setCorreo("maria.lopez&#64;gmail.com");
+        c2.setCorreo("maria.lopez@gmail.com");
         c2.setDireccion("Jr. Cusco 456");
         c2.setEstado(true);
         c2.setFechaIngreso(LocalDate.now());
@@ -94,7 +94,7 @@ public class DataInitializer implements CommandLineRunner {
         r1.setNombres("Pedro Luis");
         r1.setApellidos("Suarez Gomez");
         r1.setTelefono("965432198");
-        r1.setCorreo("pedro.suarez&#64;gmail.com");
+        r1.setCorreo("pedro.suarez@gmail.com");
         r1.setDireccion("Av. Brasil 789");
         r1.setEstado(true);
         r1.setFechaIngreso(LocalDate.now());
@@ -139,21 +139,21 @@ public class DataInitializer implements CommandLineRunner {
         crearProducto("P003", "Yogurt Laive 1L", "Yogurt de fresa",
                 new BigDecimal("8.50"), 30, lacteos, hoy.minusDays(2));  
         crearProducto("P004", "Coca Cola 1.5L", "Gaseosa",
-                new BigDecimal("7.00"), 40, bebidas, null);               
+                new BigDecimal("7.00"), 40, bebidas, hoy.plusDays(20));               
         crearProducto("P005", "Agua Ciel 1L", "Agua sin gas",
-                new BigDecimal("2.50"), 60, bebidas, null);
+                new BigDecimal("2.50"), 4, bebidas, hoy.minusDays(5));
         crearProducto("P006", "Jugo Don Vitor 1L", "Jugo de naranja",
                 new BigDecimal("9.00"), 25, bebidas, hoy.plusDays(5));   
         crearProducto("P007", "Arroz Costeño 5kg", "Arroz blanco",
-                new BigDecimal("25.00"), 35, abarrotes, null);
+                new BigDecimal("25.00"), 3, abarrotes, hoy.plusDays(50));
         crearProducto("P008", "Azúcar Rubia 1kg", "Azúcar integral",
-                new BigDecimal("5.50"), 45, abarrotes, null);
+                new BigDecimal("5.50"), 45, abarrotes, hoy.plusDays(80));
         crearProducto("P009", "Aceite Primor 1L", "Aceite vegetal",
                 new BigDecimal("12.00"), 3, abarrotes, hoy.minusDays(5)); 
         crearProducto("P010", "Detergente Bolívar 1kg", "Ropa sucia",
-                new BigDecimal("11.50"), 28, limpieza, null);
+                new BigDecimal("11.50"), 28, limpieza, hoy.plusDays(120));
         crearProducto("P011", "Papel Higiénico Elite 4x", "Doble hoja",
-                new BigDecimal("8.00"), 4, limpieza, null);               
+                new BigDecimal("8.00"), 4, limpieza, hoy.minusDays(2));               
         crearProducto("P012", "Papas Fritas Lay's 150g", "Clásicas",
                 new BigDecimal("6.50"), 50, snacks, hoy.plusDays(45));   
     }

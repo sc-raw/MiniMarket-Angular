@@ -12,6 +12,11 @@ export class VentaService {
     return this.http.get<Venta[]>(this.baseUrl);
   }
 
+  anular(id: number): Observable<any> {
+    return this.http.delete(`/api/ventas/${id}`, { withCredentials: true });
+  }
+
+
   buscarPorId(id: number): Observable<Venta> {
     return this.http.get<Venta>(`${this.baseUrl}/${id}`);
   }

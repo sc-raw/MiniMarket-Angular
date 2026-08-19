@@ -1,3 +1,4 @@
+// auth.service.ts
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
@@ -54,9 +55,16 @@ export class AuthService {
     return this.usuarioActual() !== null;
   }
 
+  // ================= VERIFICACIÓN DE ROLES =================
+
   tieneRol(rol: string): boolean {
     const u = this.usuarioActual();
     return u !== null && u.rol === rol;
+  }
+
+  // 🔥 MÉTODO AGREGADO
+  tieneAlgunRol(roles: string[]): boolean {
+    return roles.some(rol => this.tieneRol(rol));
   }
 
   // ================= MÉTODOS POR ROL =================

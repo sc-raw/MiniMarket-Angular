@@ -54,10 +54,10 @@ import { Categoria } from '../../core/models/models';
                     <td>{{ c.idCategoria }}</td>
                     <td>{{ c.nombre }}</td>
                     <td>
-                      <button class="btn btn-warning btn-sm me-1" (click)="editar(c)" title="Editar">
+                      <button class="btn btn-warning btn-sm me-1" (click)="editar(c)">
                         <i class="bi bi-pencil"></i>
                       </button>
-                      <button class="btn btn-danger btn-sm" (click)="eliminar(c)" title="Eliminar">
+                      <button class="btn btn-danger btn-sm" (click)="eliminar(c)">
                         <i class="bi bi-trash"></i>
                       </button>
                     </td>
@@ -89,24 +89,15 @@ import { Categoria } from '../../core/models/models';
                 <form (ngSubmit)="guardar()">
                   <div class="mb-3">
                     <label class="form-label fw-bold">Nombre</label>
-                    <input type="text"
-                           class="form-control"
-                           name="nombre"
+                    <input type="text" class="form-control" name="nombre"
                            [(ngModel)]="categoriaEditando.nombre"
-                           maxlength="40"
-                           required
+                           maxlength="40" required
                            placeholder="Ej: Abarrotes, Lácteos, Bebidas">
                   </div>
                   <div class="text-end">
-                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">
-                      Cancelar
-                    </button>
+                    <button type="button" class="btn btn-secondary me-2" (click)="cerrarFormulario()">Cancelar</button>
                     <button type="submit" class="btn btn-success" [disabled]="guardando()">
-                      @if (guardando()) {
-                        Guardando...
-                      } @else {
-                        Guardar
-                      }
+                      @if (guardando()) { Guardando... } @else { Guardar }
                     </button>
                   </div>
                 </form>
@@ -137,10 +128,7 @@ export class CategoriasComponent implements OnInit {
   private cargar(): void {
     this.cargando.set(true);
     this.categoriaService.listar().subscribe({
-      next: (data) => {
-        this.categorias.set(data);
-        this.cargando.set(false);
-      },
+      next: (data) => { this.categorias.set(data); this.cargando.set(false); },
       error: (err) => {
         console.error(err);
         this.error.set('Error al cargar categorías.');
@@ -168,47 +156,33 @@ export class CategoriasComponent implements OnInit {
       this.error.set('El nombre es obligatorio.');
       return;
     }
-
     this.guardando.set(true);
     this.error.set('');
-
     this.categoriaService.guardar(this.categoriaEditando).subscribe({
       next: () => {
         this.guardando.set(false);
         this.cerrarFormulario();
-        this.mensaje.set(
-          this.categoriaEditando.idCategoria
-            ? 'Categoría actualizada correctamente.'
-            : 'Categoría creada correctamente.'
-        );
+        this.mensaje.set('Categoría guardada correctamente.');
         this.cargar();
       },
       error: (err) => {
         this.guardando.set(false);
-        // Caso: backend respondió 200 pero el body no era JSON válido
-        if (err.status === 200) {
-          this.cerrarFormulario();
-          this.mensaje.set('Categoría guardada correctamente.');
-          this.cargar();
-          return;
-        }
+        this.error.set('Error al guardar. ¿El nombre ya existe?');
         console.error(err);
-        this.error.set('No se pudo guardar. ¿El nombre ya existe?');
       }
     });
   }
 
   eliminar(c: Categoria): void {
     if (!confirm(`¿Eliminar la categoría "${c.nombre}"?`)) return;
-
     this.categoriaService.eliminar(c.idCategoria!).subscribe({
       next: () => {
         this.mensaje.set('Categoría eliminada.');
         this.cargar();
       },
       error: (err) => {
-        console.error(err);
         this.error.set('No se pudo eliminar. Puede estar en uso por productos.');
+        console.error(err);
       }
     });
   }

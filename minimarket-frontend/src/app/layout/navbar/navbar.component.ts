@@ -1,11 +1,13 @@
+// navbar.component.ts
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav class="navbar navbar-expand-lg navbar-dark">
@@ -19,9 +21,13 @@ import { AuthService } from '../../core/auth/auth.service';
         <div class="collapse navbar-collapse" id="menu">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">🏠 Inicio</a>
+              <a class="nav-link" routerLink="/" routerLinkActive="active" 
+                 [routerLinkActiveOptions]="{exact:true}">🏠 Inicio</a>
             </li>
+            
             @if (auth.estaAutenticado()) {
+
+              <!-- 🔥 ATENCIÓN AL CLIENTE -->
               @if (auth.esAtencionCliente()) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/pedidos-whatsapp" routerLinkActive="active">
@@ -29,32 +35,48 @@ import { AuthService } from '../../core/auth/auth.service';
                   </a>
                 </li>
               }
-              @if (!auth.esAtencionCliente() && auth.puedeVerClientes()) {
+
+              <!-- 👤 Clientes: ADMIN o CAJERO -->
+              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO'])) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/clientes" routerLinkActive="active">👤 Clientes</a>
                 </li>
               }
+
+              <!-- 📦 Productos: visible para TODOS los autenticados -->
               <li class="nav-item">
                 <a class="nav-link" routerLink="/productos" routerLinkActive="active">📦 Productos</a>
               </li>
-              @if (auth.puedeGestionarCategorias()) {
+
+              <!-- 🏷️ Categorías: SOLO ADMIN -->
+              @if (auth.tieneRol('ADMIN')) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/categorias" routerLinkActive="active">🏷️ Categorías</a>
                 </li>
               }
-              @if (auth.puedeGestionarEmpleados()) {
+
+              <!-- 🧑‍💼 Cajeros: SOLO ADMIN -->
+              @if (auth.tieneRol('ADMIN')) {
                 <li class="nav-item">
-                  <a class="nav-link" routerLink="/empleados" routerLinkActive="active">🧑‍💼 Empleados</a>
+                  <a class="nav-link" routerLink="/cajeros" routerLinkActive="active">🧑‍💼 Cajeros</a>
                 </li>
               }
-              @if (auth.puedeVerVentas() && !auth.esAtencionCliente()) {
+
+              <!-- 🛒 Ventas: ADMIN, CAJERO o REPONEDOR -->
+              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO', 'REPONEDOR'])) {
                 <li class="nav-item">
                   <a class="nav-link" routerLink="/ventas" routerLinkActive="active">🛒 Ventas</a>
                 </li>
               }
-              <li class="nav-item">
-                <a class="nav-link" routerLink="/reportes" routerLinkActive="active">📊 Reportes</a>
-              </li>
+
+              <!-- 📊 Reportes: ADMIN, CAJERO o ATENCION_CLIENTE -->
+              @if (auth.tieneAlgunRol(['ADMIN', 'CAJERO']) || auth.esAtencionCliente()) {
+                <li class="nav-item">
+                  <a class="nav-link" routerLink="/reportes" routerLinkActive="active">📊 Reportes</a>
+                </li>
+              }
+
+              <!-- Dropdown usuario -->
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                   👤 {{ auth.usuarioActual()?.username }}
@@ -69,6 +91,8 @@ import { AuthService } from '../../core/auth/auth.service';
                   </li>
                 </ul>
               </li>
+
+              
             } @else {
               <li class="nav-item">
                 <a class="nav-link" routerLink="/login">
@@ -88,7 +112,7 @@ export class NavbarComponent {
   private router = inject(Router);
 
   logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
-  }
+  this.auth.logout();
+  this.router.navigate(['/login']);
+}
 }

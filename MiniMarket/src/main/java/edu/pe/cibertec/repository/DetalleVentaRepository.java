@@ -10,4 +10,6 @@ import edu.pe.cibertec.entity.Venta;
 public interface DetalleVentaRepository extends JpaRepository<DetalleVenta, Long> {
 
     List<DetalleVenta> findByVenta(Venta venta);
+    
+    List<DetalleVenta> findByVentaId(Long ventaId);
 }

@@ -39,6 +39,9 @@ public class VentaServiceImpl implements VentaService {
 
     @Autowired
     private ProductoService productoService;
+    
+    @Autowired
+    private DetalleVentaRepository detalleVentaRepository;
 
     @Override
     @Transactional
@@ -97,7 +100,7 @@ public class VentaServiceImpl implements VentaService {
         Venta venta = new Venta();
         venta.setCliente(cliente);
         venta.setCajero(cajero);
-        venta.setEstado("PENDIENTE");
+        venta.setEstado("COMPLETADO");
         venta.setTotal(total);
 
         // 8. GUARDAR VENTA
@@ -170,11 +173,21 @@ public class VentaServiceImpl implements VentaService {
     @Override
     @Transactional
     public void eliminar(Long id) {
-        Venta venta = ventaRepository.findById(id).orElseThrow(() ->
-                new RuntimeException("La venta con ID " + id + " no existe."));
-        if (!"PENDIENTE".equals(venta.getEstado())) {
-            throw new RuntimeException("Solo se pueden cancelar ventas que se encuentren en estado PENDIENTE.");
+        Venta venta = ventaRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("La venta con ID " + id + " no existe."));
+        
+        if (!"COMPLETADO".equals(venta.getEstado()) && !"PENDIENTE".equals(venta.getEstado())) {
+            throw new RuntimeException("Solo se pueden anular ventas en estado COMPLETADO o PENDIENTE.");
         }
+        
+        // 🔥 DEVOLVER STOCK - CORREGIDO
+        List<DetalleVenta> detalles = detalleVentaRepository.findByVentaId(id);
+        for (DetalleVenta detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            producto.setStock(producto.getStock() + detalle.getCantidad());
+            productoService.guardar(producto);
+        }
+        
         venta.setEstado("CANCELADA");
         ventaRepository.save(venta);
     }
