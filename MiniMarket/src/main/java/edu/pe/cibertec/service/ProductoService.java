@@ -15,6 +15,5 @@ public interface ProductoService {
     List<Producto> buscarPorNombreConteniendo(String texto);
     List<Producto> listarActivos();
 
-    // Actualiza SOLO el stock de un producto (para reponedores)
     Producto actualizarStock(Integer id, Integer nuevoStock);
 }

@@ -14,23 +14,7 @@ import edu.pe.cibertec.entity.PedidoWhatsApp;
 import edu.pe.cibertec.entity.Venta;
 import edu.pe.cibertec.whatsapp.WhatsAppService;
 
-/**
- * Controlador REST para la integración de WhatsApp con Meta Business API.
- *
- * Webhook (públicos - los llama Meta):
- *   GET  /api/whatsapp/webhook      → Verificación del webhook
- *   POST /api/whatsapp/webhook      → Recibe mensajes de los clientes
- *
- * Gestión de pedidos (requieren rol ATENCION_CLIENTE, ver SecurityConfig):
- *   GET  /api/whatsapp/pedidos                    → Lista todos
- *   GET  /api/whatsapp/pedidos/pendientes         → Lista solo pendientes
- *   GET  /api/whatsapp/pedidos/tipo/{tipo}        → Lista por tipo
- *   GET  /api/whatsapp/pedidos/count?estado=X     → Conteo (para badge navbar)
- *   PUT  /api/whatsapp/pedidos/{id}/en-proceso    → Marca como en revisión
- *   PUT  /api/whatsapp/pedidos/{id}/atender       → Atiende con respuesta (cierra pedido)
- *   POST /api/whatsapp/pedidos/{id}/enviar        → Envía mensaje libre (no cierra)
- *   POST /api/whatsapp/pedidos/{id}/convertir-venta → Convierte pedido en Venta PENDIENTE
- */
+
 @RestController
 @RequestMapping("/api/whatsapp")
 public class WhatsAppRestController {
@@ -44,7 +28,6 @@ public class WhatsAppRestController {
     @Value("${whatsapp.verify-token:VERIFY_TOKEN_PLACEHOLDER}")
     private String verifyToken;
 
-    // ============ WEBHOOK (PÚBLICOS) ============
 
     @GetMapping(value = "/webhook", produces = "text/plain")
     public ResponseEntity<String> verificarWebhook(
@@ -126,7 +109,6 @@ public class WhatsAppRestController {
         }
     }
 
-    // ============ GESTIÓN DE PEDIDOS ============
 
     @GetMapping("/pedidos")
     public List<PedidoWhatsApp> listarTodos() {
@@ -143,7 +125,6 @@ public class WhatsAppRestController {
         return whatsappService.listarPorTipo(tipo);
     }
 
-    /** Conteo por estado — para badge en navbar */
     @GetMapping("/pedidos/count")
     public ResponseEntity<Map<String, Long>> contarPorEstado(
             @RequestParam(name = "estado", defaultValue = "PENDIENTE") String estado) {
@@ -165,7 +146,6 @@ public class WhatsAppRestController {
         return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
     }
 
-    /** Envía un mensaje libre del operador (no cierra el pedido). */
     @PostMapping("/pedidos/{id}/enviar")
     public ResponseEntity<?> enviarMensaje(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String texto = body.get("texto");
@@ -178,11 +158,6 @@ public class WhatsAppRestController {
         return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
     }
 
-    /**
-     * Convierte un pedido WhatsApp en una Venta PENDIENTE.
-     * Body: { clienteId, cajeroId, productos: [{productoId, cantidad}] }
-     * El cajero deberá cobrarla desde /ventas después.
-     */
     @PostMapping("/pedidos/{id}/convertir-venta")
     public ResponseEntity<?> convertirAVenta(@PathVariable Long id, @RequestBody ConvertirVentaRequest req) {
         try {
@@ -201,7 +176,6 @@ public class WhatsAppRestController {
         }
     }
 
-    // DTO interno para el endpoint convertir-venta
     public static class ConvertirVentaRequest {
         private Long clienteId;
         private Long cajeroId;

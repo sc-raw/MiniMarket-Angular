@@ -13,16 +13,12 @@ public class LoginResponse {
     private String username;
     private String rol;
 
-    // ===== Datos de la persona vinculada (cajero o reponedor) =====
-    // null cuando el usuario es admin o atencion_cliente (no tiene persona)
-    private Long   empleadoId;   // cajero.id o reponedor.id
-    private String nombre;       // p.ej. "Juan Carlos"
-    private String apellidos;    // p.ej. "Perez Garcia"
+    private Long   empleadoId;   
+    private String nombre;       
+    private String apellidos;    
 
-    // ===== Datos del cliente =====
-    // null cuando el usuario no es CLIENTE o aún no tiene una Cliente creada
-    private Long   clienteId;    // cliente.id
-    private String dni;          // cliente.dni
+    private Long   clienteId;    
+    private String dni;          
 
     public LoginResponse(boolean success, String message, String username, String rol) {
         this.success = success;

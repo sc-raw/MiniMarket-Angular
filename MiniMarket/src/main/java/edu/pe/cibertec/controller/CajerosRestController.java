@@ -34,22 +34,21 @@ public class CajerosRestController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // ---------- ENDPOINT: CREAR CAJERO + USUARIO VINCULADOS ----------
     @PostMapping("/crear-con-usuario")
     @Transactional
     public ResponseEntity<?> crearCajeroConUsuario(@RequestBody CajeroUsuarioDTO dto) {
         try {
-            // 1. Guardamos el cajero (Hibernate le asigna ID)
+            
             Cajero nuevoCajero = dto.getCajero();
             cajeroRepository.save(nuevoCajero);
 
-            // 2. Creamos el usuario y lo VINCULAMOS al cajero
+           
             Usuario u = new Usuario();
             u.setUsername(dto.getUsername());
             u.setPassword(passwordEncoder.encode(dto.getPassword()));
             u.setRol("CAJERO");
             u.setEstado(true);
-            u.setCajero(nuevoCajero);   // 🔥 FK que faltaba
+            u.setCajero(nuevoCajero);  
             usuarioRepository.save(u);
 
             return ResponseEntity.ok(Map.of("mensaje", "Cajero y Usuario creados con éxito"));
@@ -58,7 +57,6 @@ public class CajerosRestController {
         }
     }
 
-    // ---------- MÉTODOS EXISTENTES ----------
     @GetMapping
     public List<Cajero> listar() {
         return empleadoService.listarCajerosActivos();
@@ -131,7 +129,7 @@ public class CajerosRestController {
         if (emp == null || !(emp instanceof Cajero cajero)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cajero no encontrado.");
         }
-        cajero.setEstado(false); // baja lógica
+        cajero.setEstado(false); 
         empleadoService.guardar(cajero);
         return ResponseEntity.ok(Map.of("mensaje", "Cajero desactivado correctamente."));
     }

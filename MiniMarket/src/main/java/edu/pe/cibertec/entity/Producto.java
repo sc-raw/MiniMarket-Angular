@@ -45,7 +45,6 @@ public class Producto {
     @Column(nullable = false)
     private Boolean estado = true;
 
-    // Fecha de vencimiento del producto (opcional: solo para perecederos)
     @Column
     private LocalDate fechaVencimiento;
 

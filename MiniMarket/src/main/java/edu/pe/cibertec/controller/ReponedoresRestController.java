@@ -18,10 +18,7 @@ import edu.pe.cibertec.repository.ReponedorRepository;
 import edu.pe.cibertec.repository.UsuarioRepository;
 import edu.pe.cibertec.service.EmpleadoService;
 
-/**
- * API REST para gestionar Reponedores.
- * Igual que CajerosRestController pero para empleados de tipo Reponedor.
- */
+
 @RestController
 @RequestMapping("/api/reponedores")
 public class ReponedoresRestController {
@@ -38,22 +35,19 @@ public class ReponedoresRestController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // ---------- ENDPOINT NUEVO ----------
     @PostMapping("/crear-con-usuario")
     @Transactional
     public ResponseEntity<?> crearReponedorConUsuario(@RequestBody ReponedorUsuarioDTO dto) {
         try {
-            // 1. Guardamos el reponedor (Hibernate le asigna ID)
             Reponedor nuevoReponedor = dto.getReponedor();
             reponedorRepository.save(nuevoReponedor);
 
-            // 2. Creamos el usuario y lo VINCULAMOS al reponedor
             Usuario u = new Usuario();
             u.setUsername(dto.getUsername());
             u.setPassword(passwordEncoder.encode(dto.getPassword()));
             u.setRol("REPONEDOR");
             u.setEstado(true);
-            u.setReponedor(nuevoReponedor);   // 🔥 FK que faltaba
+            u.setReponedor(nuevoReponedor);   
             usuarioRepository.save(u);
 
             return ResponseEntity.ok(Map.of("mensaje", "Reponedor y Usuario creados con éxito"));

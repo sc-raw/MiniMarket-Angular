@@ -36,8 +36,6 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean estado = true;
 
-    // ===== Link Cajero / Reponedor =====
-    // nullable porque admin y atencion_cliente no tienen persona asociada
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cajero_id")
     private Cajero cajero;
@@ -46,8 +44,6 @@ public class Usuario {
     @JoinColumn(name = "reponedor_id")
     private Reponedor reponedor;
 
-    // ===== Link Cliente =====
-    // nullable: admin, cajero, reponedor y atencion_cliente no tienen cliente
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;

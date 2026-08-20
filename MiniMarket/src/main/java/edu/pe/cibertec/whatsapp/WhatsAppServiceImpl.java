@@ -58,9 +58,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             "2️⃣ Tengo una duda\n\n" +
             "Responde con el número 1 o 2.";
 
-    /**
-     * Procesa un mensaje entrante del webhook de Meta.
-     */
     @Override
     @Transactional
     public void procesarMensajeEntrante(String numeroRemitente, String nombreRemitente, String mensaje) {
@@ -69,7 +66,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
         List<PedidoWhatsApp> historial = pedidoRepository
                 .findByNumeroRemitenteOrderByFechaRegistroDesc(numeroRemitente);
 
-        // PRIMER MENSAJE o último ATENDIDO → crear NUEVO y responder menú
         if (historial.isEmpty() || "ATENDIDO".equals(historial.get(0).getEstado())) {
             PedidoWhatsApp pedido = new PedidoWhatsApp();
             pedido.setNumeroRemitente(numeroRemitente);
@@ -84,7 +80,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 
         PedidoWhatsApp ultimo = historial.get(0);
 
-        // Si está NUEVO, interpretar la respuesta del menú
         if ("NUEVO".equals(ultimo.getEstado())) {
             String respuesta = mensaje.trim();
             if ("1".equals(respuesta)) {
@@ -113,7 +108,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             return;
         }
 
-        // Si está PENDIENTE → el cliente envía más detalles
         if ("PENDIENTE".equals(ultimo.getEstado())) {
             ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
             pedidoRepository.save(ultimo);
@@ -123,8 +117,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
             return;
         }
 
-        // 🔥 FIX BUG: si está EN_PROCESO (operador lo está revisando) y el cliente manda
-        // otro mensaje → NO SE PIERDE, se acumula y se le avisa al cliente.
         if ("EN_PROCESO".equals(ultimo.getEstado())) {
             ultimo.setMensaje(ultimo.getMensaje() + " | " + mensaje);
             pedidoRepository.save(ultimo);
@@ -134,10 +126,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
         }
     }
 
-    /**
-     * Envía un mensaje de texto a un número de WhatsApp usando la API de Meta.
-     * 🔥 FIX: usa ObjectMapper para construir el JSON de forma segura (no más strings concatenados).
-     */
     @Override
     public void enviarMensaje(String numeroDestino, String mensaje) {
         if ("TOKEN_PLACEHOLDER".equals(token)) {
@@ -153,7 +141,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 
             String url = apiUrl + "/" + phoneNumberId + "/messages";
 
-            // 🔥 Construir body con Map y serializar con ObjectMapper (escapa comillas, emojis, etc.)
             Map<String, Object> textPart = new HashMap<>();
             textPart.put("body", mensaje);
 
@@ -193,7 +180,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
     public PedidoWhatsApp atender(Long id, String respuesta) {
         PedidoWhatsApp pedido = pedidoRepository.findById(id).orElse(null);
         if (pedido == null) return null;
-        // Acumular la respuesta al mensaje para que se vea en el chat
+
         pedido.setRespuesta(respuesta);
         pedido.setEstado("ATENDIDO");
         pedido.setFechaAtencion(LocalDateTime.now());
@@ -218,24 +205,20 @@ public class WhatsAppServiceImpl implements WhatsAppService {
         return pedidoRepository.save(pedido);
     }
 
-    // ===== Nuevos métodos =====
 
     @Override
     @Transactional
     public PedidoWhatsApp enviarMensajeOperador(Long pedidoId, String texto) {
         PedidoWhatsApp pedido = pedidoRepository.findById(pedidoId).orElse(null);
         if (pedido == null) return null;
-        // Acumular la respuesta del operador al "mensaje" para que aparezca en el chat
-        // La separación con " | [OPERADOR]: " permite distinguir en el frontend
+
         String actual = pedido.getMensaje() == null ? "" : pedido.getMensaje();
-        // Limitar a 500 chars (columna)
         String nuevo = actual + " | [OPERADOR]: " + texto;
         if (nuevo.length() > 480) {
             nuevo = nuevo.substring(nuevo.length() - 480);
         }
         pedido.setMensaje(nuevo);
         pedidoRepository.save(pedido);
-        // Enviar el mensaje al cliente por WhatsApp
         enviarMensaje(pedido.getNumeroRemitente(), texto);
         return pedido;
     }
@@ -245,26 +228,18 @@ public class WhatsAppServiceImpl implements WhatsAppService {
         return pedidoRepository.countByEstado(estado);
     }
 
-    /**
-     * Convierte un pedido WhatsApp en una Venta PENDIENTE.
-     * El operador ya validó cliente + productos desde el frontend.
-     * El cajero deberá cobrarla después desde /ventas.
-     */
     @Override
     @Transactional
     public Venta convertirAVenta(Long pedidoId, Long clienteId, Long cajeroId,
                                   List<DetalleVentaRequest> productos) {
-        // 1. Crear la venta PENDIENTE
         CrearVentaRequest request = new CrearVentaRequest();
         request.setClienteId(clienteId);
         request.setCajeroId(cajeroId);
         request.setProductos(productos);
         Venta venta = ventaService.crearVenta(request);
 
-        // 2. Vincular el pedido con la venta creada
         vincularVenta(pedidoId, venta.getId());
 
-        // 3. Marcar el pedido como ATENDIDO con mensaje informativo
         String respuesta = "✅ Tu pedido fue registrado. Boleta #" + venta.getId() +
                 ". Total: S/." + venta.getTotal() +
                 ". Acércate a caja para confirmar tu pago. 🙌";

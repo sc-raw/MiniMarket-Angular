@@ -50,21 +50,15 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authenticationProvider(authenticationProvider())
-        .csrf(csrf -> csrf.disable()) // Mantenemos CSRF desactivado para la API REST
+        .csrf(csrf -> csrf.disable()) 
         .authorizeHttpRequests(auth -> auth
-            // 1. Rutas públicas (login, recursos estáticos, errores)
             .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**",
                              "/error", "/acceso-denegado").permitAll()
 
-            // 2. API REST pública (la autenticación se delega a guards de Angular).
-            //    En producción se endurecería con JWT, pero por ahora queda abierto
-            //    para que la demo funcione sin configurar cookies entre dominios.
-            //    Webhook de WhatsApp también es público (lo llama Meta).
             .requestMatchers("/api/whatsapp/**").permitAll()
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/api/**").permitAll()
 
-            // 3. Vistas Thymeleaf y rutas protegidas por Rol
             .requestMatchers("/").authenticated()
             .requestMatchers("/clientes/**").hasAnyRole("ADMIN", "CAJERO", "ATENCION_CLIENTE")
             .requestMatchers("/productos/**").hasAnyRole("ADMIN", "CAJERO", "REPONEDOR", "ATENCION_CLIENTE")

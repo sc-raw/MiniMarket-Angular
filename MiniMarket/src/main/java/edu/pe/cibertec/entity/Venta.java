@@ -47,20 +47,15 @@ public class Venta {
     @Column(length = 20, nullable = false)
     private String estado = "PENDIENTE";
 
-    // Método de pago (EFECTIVO / YAPE / PLIN / SIP)
-    // se llena al confirmar el pago en la simulación
     @Column(length = 20)
     private String metodoPago;
 
-    // Monto con el que pagó el cliente (efectivo) — para calcular vuelto
     @Column(precision = 10, scale = 2)
     private BigDecimal montoRecibido = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total = BigDecimal.ZERO;
 
-    // 🔥 Detalles de la venta (productos comprados)
-    // FetchType.EAGER para que se incluyan al serializar la venta
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<DetalleVenta> detalles = new ArrayList<>();

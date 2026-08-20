@@ -46,35 +46,29 @@ public class VentaServiceImpl implements VentaService {
     @Override
     @Transactional
     public Venta crearVenta(CrearVentaRequest request) {
-        // 1. VALIDAR CLIENTE
         Cliente cliente = clienteService.buscarPorId(request.getClienteId());
         if (cliente == null) {
             throw new RuntimeException("El cliente no existe.");
         }
 
-        // 2. VALIDAR CAJERO
         Empleado empleado = empleadoService.buscarPorId(request.getCajeroId());
         if (empleado == null) {
             throw new RuntimeException("El cajero no existe.");
         }
 
-        // 3. VALIDAR QUE SEA CAJERO
         if (!(empleado instanceof Cajero)) {
             throw new RuntimeException("El empleado seleccionado no es un cajero.");
         }
         Cajero cajero = (Cajero) empleado;
 
-        // 4. VALIDAR QUE EL CAJERO ESTÉ ACTIVO
         if (!Boolean.TRUE.equals(cajero.getEstado())) {
             throw new RuntimeException("El cajero se encuentra inactivo.");
         }
 
-        // 5. VALIDAR QUE EXISTAN PRODUCTOS
         if (request.getProductos() == null || request.getProductos().isEmpty()) {
             throw new RuntimeException("La venta debe contener al menos un producto.");
         }
 
-        // 6. CALCULAR EL TOTAL Y VALIDAR STOCK
         BigDecimal total = BigDecimal.ZERO;
         for (DetalleVentaRequest item : request.getProductos()) {
             if (item.getCantidad() == null || item.getCantidad() <= 0) {
@@ -96,17 +90,14 @@ public class VentaServiceImpl implements VentaService {
             total = total.add(subtotal);
         }
 
-        // 7. CREAR VENTA
         Venta venta = new Venta();
         venta.setCliente(cliente);
         venta.setCajero(cajero);
         venta.setEstado("PENDIENTE");
         venta.setTotal(total);
 
-        // 8. GUARDAR VENTA
         venta = ventaRepository.save(venta);
 
-        // 9. CREAR DETALLES Y DESCONTAR STOCK
         for (DetalleVentaRequest item : request.getProductos()) {
             Producto producto = productoService.buscarPorId(item.getProductoId());
             BigDecimal subtotal = producto.getPrecio().multiply(BigDecimal.valueOf(item.getCantidad()));
@@ -119,12 +110,10 @@ public class VentaServiceImpl implements VentaService {
             detalle.setSubtotal(subtotal);
             detalleRepository.save(detalle);
 
-            // Descontar stock
             producto.setStock(producto.getStock() - item.getCantidad());
             productoService.guardar(producto);
         }
 
-        // 10. DEVOLVER VENTA
         return venta;
     }
 
@@ -205,7 +194,6 @@ public class VentaServiceImpl implements VentaService {
             throw new RuntimeException("Solo se pueden anular ventas en estado FINALIZADA o PENDIENTE.");
         }
         
-        // 🔥 DEVOLVER STOCK - CORREGIDO
         List<DetalleVenta> detalles = detalleVentaRepository.findByVentaId(id);
         for (DetalleVenta detalle : detalles) {
             Producto producto = detalle.getProducto();

@@ -44,7 +44,6 @@ public class VentasRestController {
     @Autowired
     private EmpleadoService empleadoService;
 
-    // ---------- VENTAS POR DNI (historial del cliente) ----------
     @GetMapping("/cliente/{dni}")
     public ResponseEntity<?> ventasPorDni(@PathVariable String dni) {
         Cliente cliente = clienteRepository.findByDni(dni);
@@ -54,12 +53,10 @@ public class VentasRestController {
         return ResponseEntity.ok(ventaRepository.findByClienteId(cliente.getId()));
     }
 
-    // ---------- NUEVO ENDPOINT PARA VENTAS WEB ----------
     @PostMapping("/web")
     @Transactional
     public ResponseEntity<?> registrarVentaWeb(@RequestBody VentaWebDTO dto) {
         try {
-            // 1. Buscar o crear al cliente por DNI
             Cliente cliente = clienteRepository.findByDni(dto.getDni());
             if (cliente == null) {
                 Cliente nuevo = new Cliente();
@@ -71,7 +68,6 @@ public class VentasRestController {
                 cliente = clienteRepository.save(nuevo);
             }
 
-            // 2. Vincular la Cliente al Usuario CLIENTE logueado (si viene el username)
             if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
                 Usuario usuario = usuarioRepository.findByUsername(dto.getUsername());
                 if (usuario != null && usuario.getCliente() == null) {
@@ -80,9 +76,6 @@ public class VentasRestController {
                 }
             }
 
-            // 3. Crear la venta asignada al primer cajero activo.
-            //    🔥 La venta queda en estado PENDIENTE - el cajero debe aprobarla
-            //       y cobrar desde /ventas antes de que pase a FINALIZADA.
             List<Cajero> cajerosActivos = empleadoService.listarCajerosActivos();
             if (cajerosActivos.isEmpty()) {
                 return ResponseEntity.badRequest().body("No hay cajeros activos para registrar la venta.");
@@ -93,14 +86,12 @@ public class VentasRestController {
             request.setProductos(dto.getProductos());
 
             Venta venta = ventaService.crearVenta(request);
-            // 🔥 NO se llama a confirmarPago() aquí. El cajero lo hará desde /ventas.
             return ResponseEntity.ok(venta);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error en venta web: " + e.getMessage());
         }
     }
 
-    // ---------- ENDPOINTS EXISTENTES ----------
     @PostMapping
     public ResponseEntity<Venta> crearVenta(@RequestBody CrearVentaRequest request) {
         Venta venta = ventaService.crearVenta(request);
@@ -132,8 +123,6 @@ public class VentasRestController {
         }
     }
 
-    // ---------- CONFIRMAR PAGO (simulación de pago en POS) ----------
-    // Lo llama el cajero desde /ventas cuando aprueba una venta PENDIENTE.
     @PostMapping("/{id}/pagar")
     public ResponseEntity<?> confirmarPago(@PathVariable Long id,
                                            @RequestBody ConfirmarPagoRequest pago) {
